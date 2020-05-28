@@ -5,7 +5,7 @@
       <div class="col-sm-1"></div>
       <div class="col-sm-10">
         <h1 class="center mt-4">Dashboard</h1>
-            <p class="center mb-3">Welcome, {{userName}}!</p>
+            <p class="center mb-3">Welcome, {{$auth.user.name}}!</p>
             <form class="mx-5 lead">
               <div class="form-group">
                 <label for="postTitle">Post Title</label>
@@ -17,7 +17,7 @@
               <label>Body</label>
               <div ref="editorNode">
               </div>
-              <button type="submit" class="btn btn-primary btn-lg mt-3" 
+              <button type="submit" class="btn btn-primary btn-lg mt-3"
               :style="floatRight">Create post</button>
             </div>
       </div>
@@ -63,7 +63,6 @@ export default {
         },
         theme: 'snow',
       },
-      userName: JSON.parse(localStorage.getItem('userObj')).name,
     };
   },
 
@@ -77,20 +76,6 @@ export default {
 
   mounted() {
     this.initializeEditor();
-    setTimeout(() => {
-      const userObj = localStorage.getItem('userObj');
-      if (userObj) {
-        const parsedUser = JSON.parse(userObj);
-        const now = new Date();
-
-        if (now.getTime() > parsedUser.expiry) {
-          localStorage.removeItem('userObj');
-          this.setData();
-        }
-      } else {
-        this.setData();
-      }
-    }, 1000);
   },
 
   beforeDestroy() {
@@ -112,16 +97,6 @@ export default {
       this.editorContent = this.editorInstance.getText().trim()
         ? this.editorInstance.root.innerHTML
         : '';
-    },
-    async setData() {
-      const token = await this.$auth.getTokenSilently();
-      const userObj = {
-        name: this.$auth.user.name,
-        token,
-        expiry: new Date().getTime() + 36000000,
-      };
-      localStorage.setItem('userObj', JSON.stringify(userObj));
-      this.$auth.isAuthenticated = true;
     },
   },
 };

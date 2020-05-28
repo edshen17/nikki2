@@ -76,11 +76,10 @@ export default {
     show(routeName, isAuth) { // show in navbar depending if user is logged in or not
       if (routeName === 'Home') {
         return true;
-      } else if ((routeName === 'Logout' || routeName === 'Dashboard' || routeName === 'Profile')
-      && (localStorage.getItem('userObj') || isAuth)) {
+      } else if ((routeName === 'Logout' || routeName === 'Dashboard' || routeName === 'Profile') && isAuth) {
         return true;
-      } else if (routeName === 'Register/Login' && !(localStorage.getItem('userObj') || isAuth)) {
-        return true;
+      } else if (routeName === 'Register/Login' && isAuth) {
+        return false;
       }
       return false;
     },
