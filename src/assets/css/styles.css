@@ -41,7 +41,8 @@ textarea {
   margin-right: auto;
 }
 
-.footer {
+footer {
+  border-top: 1px solid gray;
 z-index: 10;
 }
 

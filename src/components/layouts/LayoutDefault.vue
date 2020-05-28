@@ -19,6 +19,8 @@
       :active="$route.name == route.name"
       v-for="route in navBarLinks"
       :key="route.id"
+      @click="login(route.name)"
+      v-if="show(route.name, $auth.isAuthenticated)"
      >
       <b-link :to="route.link">{{ route.name }}</b-link>
      </b-nav-item>
@@ -28,15 +30,14 @@
   <main class="LayoutDefault_main">
    <slot />
   </main>
-  <footer class="LayoutDefault_footer">
-   &copy; Edwin Shen
-  </footer>
  </div>
 </template>
 
 <script>
 export default {
   name: 'LayoutDefault',
+  mounted() {
+  },
   data() {
     return {
       navBarLinks: [
@@ -45,15 +46,48 @@ export default {
           link: '/',
         },
         {
-          name: 'Register',
-          link: '/users/register',
+          name: 'Register/Login',
         },
         {
-          name: 'Login',
-          link: '/users/login',
+          name: 'Dashboard',
+          link: '/dashboard',
+        },
+        {
+          name: 'Profile',
+          link: '/profile',
+        },
+        {
+          name: 'Logout',
         },
       ],
     };
   },
+  methods: {
+    login(routeName) {
+      if (routeName === 'Register/Login') {
+        this.$auth.loginWithRedirect();
+      } else if (routeName === 'Logout') {
+        localStorage.removeItem('userObj');
+        this.$auth.logout({
+          returnTo: window.location.origin,
+        });
+      }
+    },
+    show(routeName, isAuth) { // show in navbar depending if user is logged in or not
+      if (routeName === 'Home') {
+        return true;
+      } else if ((routeName === 'Logout' || routeName === 'Dashboard' || routeName === 'Profile')
+      && (localStorage.getItem('userObj') || isAuth)) {
+        return true;
+      } else if (routeName === 'Register/Login' && !(localStorage.getItem('userObj') || isAuth)) {
+        return true;
+      }
+      return false;
+    },
+  },
 };
 </script>
+
+<style lang="css">
+  @import '../../assets/css/styles.css';
+</style>
