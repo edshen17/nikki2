@@ -5,12 +5,12 @@
       <div class="col-sm-1"></div>
       <div class="col-sm-10">
         <h1 class="center mt-4">Dashboard</h1>
-            <p class="center mb-3">Welcome, {{$auth.user.name}}!</p>
+            <p class="center mb-3">Welcome, {{username}}!</p>
             <form class="mx-5 lead">
               <div class="form-group">
                 <label for="postTitle">Post Title</label>
                 <input type="text" class="form-control mb-3" id="postTitle"
-                aria-describedby="postTitle" placeholder="Enter title">
+                aria-describedby="postTitle" placeholder="Enter title" v-model="postTitle">
               </div>
             </form>
             <div class="mx-5 lead">
@@ -18,7 +18,7 @@
               <div ref="editorNode">
               </div>
               <button type="submit" class="btn btn-primary btn-lg mt-3"
-              :style="floatRight">Create post</button>
+              :style="floatRight" @click="createPost">Create post</button>
             </div>
       </div>
     </div>
@@ -27,8 +27,10 @@
 
 
 <script>
+import axios from 'axios';
 import Quill from 'quill';
 import LayoutDefault from './layouts/LayoutDefault';
+
 
 export default {
   created() {
@@ -40,11 +42,17 @@ export default {
       type: String,
     },
   },
+  computed: {
+    username() {
+      return this.$auth.user['http://localhost:8080/username'] || this.$auth.user.name;
+    },
+  },
   data() {
     return {
       floatRight: {
         float: 'right',
       },
+      postTitle: '',
       editorContent: null,
       editorInstance: null,
       editorOpts: {
@@ -97,6 +105,38 @@ export default {
       this.editorContent = this.editorInstance.getText().trim()
         ? this.editorInstance.root.innerHTML
         : '';
+    },
+    createPost() {
+      if (this.editorContent && this.postTitle) {
+        // first check if user exist in db. If user does not exist, create a new user
+        axios.get(`http://localhost:5000/server/users/${this.$auth.user.email}/json`).then((res) => {
+          if (res.data.users.length === 0) {
+            const userObj = {
+              email: this.$auth.user.email,
+            };
+            // register user with email
+            axios.post('http://localhost:5000/server/users/register', userObj).catch((err) => {
+              console.log(err);
+            });
+          }
+          // create post
+          const newPost = {
+            postedBy: this.$auth.user.email,
+            title: this.postTitle,
+            content: this.editorContent,
+          };
+
+          axios.post(`http://localhost:5000/server/users/${this.$auth.user.email}/posts`, newPost).then(() => {
+            this.$router.push('profile');
+          }).catch((err) => {
+            console.log(err);
+          });
+        }).catch((err) => {
+          console.log(err);
+        });
+      } else {
+        alert('Post title and content needed!');
+      }
     },
   },
 };

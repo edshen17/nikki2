@@ -1,10 +1,11 @@
-'use strict';
+
 const mongoose = require('mongoose');
+
 const Schema = mongoose.Schema;
 const User = require('../models/User');
 
 const CommentSchema = new Schema({
-  parentID: { 
+  parentID: {
     type: String,
     required: true,
   },
@@ -22,16 +23,13 @@ const CommentSchema = new Schema({
 });
 
 // Edit a comment
-CommentSchema.method('edit', function(edits, callback) {
+CommentSchema.method('edit', function (edits, callback) {
   Object.assign(this, edits, { editedAt: new Date() });
   this.parent().save(callback);
 });
 
 const PostSchema = new Schema({
-  postedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  },
+  postedBy: { type: Schema.Types.ObjectId, ref: 'Person' },
   title: {
     type: String,
     required: true,
@@ -46,7 +44,7 @@ const PostSchema = new Schema({
 });
 
 // Edit a post
-PostSchema.method('edit', function(edits, callback) {
+PostSchema.method('edit', function (edits, callback) {
   Object.assign(this, edits, { editedAt: new Date() });
   this.parent().save(callback);
 });

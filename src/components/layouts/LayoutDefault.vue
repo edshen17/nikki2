@@ -67,16 +67,15 @@ export default {
       if (routeName === 'Register/Login') {
         this.$auth.loginWithRedirect();
       } else if (routeName === 'Logout') {
-        localStorage.removeItem('userObj');
         this.$auth.logout({
           returnTo: window.location.origin,
         });
       }
     },
     show(routeName, isAuth) { // show in navbar depending if user is logged in or not
-      if (routeName === 'Home') {
+      if ((routeName === 'Home' || routeName === 'Register/Login') && !isAuth) {
         return true;
-      } else if ((routeName === 'Logout' || routeName === 'Dashboard' || routeName === 'Profile') && isAuth) {
+      } else if ((routeName === 'Logout' || routeName === 'Dashboard' || routeName === 'Profile' || routeName === 'Home') && isAuth) {
         return true;
       } else if (routeName === 'Register/Login' && isAuth) {
         return false;
