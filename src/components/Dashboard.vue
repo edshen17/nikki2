@@ -5,6 +5,7 @@
       <div class="col-sm-1"></div>
       <div class="col-sm-10">
         <h1 class="center mt-4">Dashboard</h1>
+            <p>{{ this.$auth.user }}</p>
             <p class="center mb-3">Welcome, {{username}}!</p>
             <form class="mx-5 lead">
               <div class="form-group">
@@ -24,7 +25,6 @@
     </div>
   </div>
 </template>
-
 
 <script>
 import axios from 'axios';
@@ -109,25 +109,26 @@ export default {
     createPost() {
       if (this.editorContent && this.postTitle) {
         // first check if user exist in db. If user does not exist, create a new user
-        axios.get(`http://localhost:5000/server/users/${this.$auth.user.email}/json`).then((res) => {
+        axios.get(`http://localhost:5000/server/users/${this.$auth.user.nickname}/json`).then((res) => {
           if (res.data.users.length === 0) {
             const userObj = {
+              username: this.$auth.user.nickname,
               email: this.$auth.user.email,
             };
-            // register user with email
+            // register user 
             axios.post('http://localhost:5000/server/users/register', userObj).catch((err) => {
               console.log(err);
             });
           }
           // create post
           const newPost = {
-            postedBy: this.$auth.user.email,
+            postedBy: this.$auth.user.nickname,
             title: this.postTitle,
             content: this.editorContent,
           };
 
-          axios.post(`http://localhost:5000/server/users/${this.$auth.user.email}/posts`, newPost).then(() => {
-            this.$router.push('profile');
+          axios.post('http://localhost:5000/server/users/posts', newPost).then(() => {
+            this.$router.push(`profile/${this.$auth.user.nickname}`);
           }).catch((err) => {
             console.log(err);
           });

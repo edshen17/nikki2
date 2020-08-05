@@ -34,12 +34,30 @@
 </template>
 
 <script>
+import { getInstance } from '../../auth/index';
+
 export default {
   name: 'LayoutDefault',
-  mounted() {
+  async mounted() {
+    const instance = getInstance();
+    instance.$watch('loading', (loading) => {
+      if (loading === false && instance.isAuthenticated) {
+        instance
+          .getUser()
+          .then((userObj) => {
+            this.username = userObj.nickname;
+            this.navBarLinks[3].link = `/profile/${this.username}`; // set dynamic username link
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+      }
+    });
   },
   data() {
     return {
+      instance: null,
+      username: '',
       navBarLinks: [
         {
           name: 'Home',
@@ -54,7 +72,7 @@ export default {
         },
         {
           name: 'Profile',
-          link: '/profile',
+          link: '',
         },
         {
           name: 'Logout',
@@ -62,6 +80,7 @@ export default {
       ],
     };
   },
+
   methods: {
     login(routeName) {
       if (routeName === 'Register/Login') {

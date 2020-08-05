@@ -81,6 +81,11 @@ export const useAuth0 = ({
       logout(o) {
         return this.auth0Client.logout(o);
       },
+      /** Get user data */
+      async getUser() {
+        this.user = await this.auth0Client.getUser();
+        return this.user;
+      },
     },
     /** Use this lifecycle method to instantiate the SDK client */
     async created() {

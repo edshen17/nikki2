@@ -10,10 +10,9 @@ const Comment = require('../models/Post').Comment;
 const CommentSchema = mongoose.model('Comment').schema;
 
 const UserSchema = new mongoose.Schema({
-  _id: Schema.Types.ObjectId,
   username: {
     type: String,
-    required: false,
+    required: true,
   },
   email: {
     type: String,
@@ -33,17 +32,9 @@ const UserSchema = new mongoose.Schema({
     type: [this],
     default: [],
   },
-  follower_count: {
-    type: Number,
-    default: 0,
-  },
   following: {
     type: [this],
     default: [],
-  },
-  following_count: {
-    type: Number,
-    default: 0,
   },
   comments: {
     type: [{ type: Schema.Types.ObjectId, ref: 'CommentSchema' }],

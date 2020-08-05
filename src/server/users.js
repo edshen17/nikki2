@@ -40,10 +40,10 @@ router.get('/external', jwtCheck, (req, res) => {
 });
 
 // GET user's JSON data
-router.get('/:email/json', (req, res, next) => {
+router.get('/:username/json', (req, res, next) => {
   User.find({
-    email: req.params.email,
-  }, 'imageURL bio followers follower_count following following_count comments comment_count posts post_count username email')
+    username: req.params.username,
+  }, 'imageURL bio followers following comments posts username email')
     .exec((err, users) => {
       if (err) return next(err);
       return res.json({
@@ -53,15 +53,14 @@ router.get('/:email/json', (req, res, next) => {
 });
 
 
-// POST /users/:email/posts
+// POST /users/posts
 // Route for creating a post
-router.post('/:email/posts', (req, res) => {
-  // find user from postedBy then create post inside...
+router.post('/posts', (req, res) => {
   User.find({
-    email: req.body.postedBy,
+    username: req.body.postedBy,
   })
     .exec((err, user) => {
-      if (err) return console.log(err);
+      if (err || user.length === 0) return console.log(err || 'User does not exist!');
       const postedBy = user[0]._id;
       const title = req.body.title;
       const content = req.body.content;
@@ -85,10 +84,29 @@ router.post('/:email/posts', (req, res) => {
 router.post('/register', (req) => {
   // create user
   const newUser = new User({
+    username: req.body.username,
     email: req.body.email,
   });
   newUser.save().catch((err) => {
     console.log(err);
+  });
+});
+
+// GET /users/:email/posts
+// Route for getting all the posts of a user in json format
+router.get('/:username/posts', (req, res) => {
+  User.find({
+    username: req.params.username,
+  }).exec((err, user) => {
+    if (err || user.length === 0) return console.log(err || 'User does not exist!');
+    Post.find({
+      postedBy: user[0]._id,
+    }).sort({
+      createdAt: -1,
+    }).exec((err, posts) => {
+      if (err) console.log(err);
+      return res.status(200).json(posts);
+    });
   });
 });
 
@@ -108,21 +126,6 @@ router.post('/register', (req) => {
 //       });
 //     });
 // });
-
-// // GET /users/:username/posts
-// // Route for getting all the posts of a user in json
-// // router.get('/:username/posts', (req, res, next) => {
-// //   Post.find({
-// //     postedBy: req.params.username,
-// //   })
-// //     .sort({
-// //       createdAt: -1,
-// //     })
-// //     .exec((err, posts) => {
-// //       if (err) return next(err);
-// //       return res.status(200).json(posts);
-// //     });
-// // });
 
 
 // // GET /users/:username/posts/:id
