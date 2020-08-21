@@ -5,7 +5,6 @@
       <div class="col-sm-1"></div>
       <div class="col-sm-10">
         <h1 class="center mt-4">Dashboard</h1>
-            <p>{{ this.$auth.user }}</p>
             <p class="center mb-3">Welcome, {{username}}!</p>
             <form class="mx-5 lead">
               <div class="form-group">
@@ -17,7 +16,7 @@
             <div class="mx-5 lead">
               <label>Body</label>
               <div ref="editorNode">
-              </div>
+            </div>
               <button type="submit" class="btn btn-primary btn-lg mt-3"
               :style="floatRight" @click="createPost">Create post</button>
             </div>

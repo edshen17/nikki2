@@ -1,14 +1,33 @@
 <template>
-  <div>
-    <button @click="callApi">Call</button>
-    <p>{{ apiMessage }}</p>
-    <p>{{ posts }}</p>
+  <div class="container-fluid pt-4 px-4">
+    <div class="row">
+      <div class="col-sm-2"></div>
+      <div class="col-sm-8">
+        <div class="py-2" v-if='posts'>
+            <div v-for="post in posts" :key="post._id" :id="post._id" @click="redirectPost(post._id)"
+            @mouseover="hover = post._id" @mouseleave="hover = false" :class="{active: hover === post._id }">
+                <h2  class="title"> {{post.title}} </h2>
+                <h6> Posted on {{$route.params.username}} {{formatCompat(post.createdAt)}} </h6>
+                <p v-html='truncateBlog(post.content)' class='blog-post-preview'></p>
+                <div class='icons mb-4'>
+                  <span class='likes'>
+                      <i class='far fa-heart fa-sm' v-on:click='likePost(post)' v-bind:class='{far: !post.liked, fas: post.liked, colorRed: post.liked}'></i>
+                      {{post.likedBy.length}}
+                  </span>
+                  <span class='comments'>
+                      <i class='far fa-comment-dots fa-sm ml-2'></i>
+                      {{post.comments.length}}
+                  </span>
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import axios from 'axios';
-import { getInstance } from '../auth/index';
 
 import LayoutDefault from './layouts/LayoutDefault';
 
@@ -21,6 +40,7 @@ export default {
     return {
       apiMessage: '',
       posts: [],
+      hover: false,
     };
   },
   methods: {
@@ -29,18 +49,55 @@ export default {
       const token = await this.$auth.getTokenSilently();
 
       // Use Axios to make a call to the API
-      const { data } = await axios.get('http://localhost:5000/server/users/external', {
-        headers: {
-          Authorization: `Bearer ${token}`, // send the access token through the 'Authorization' header
+      const { data } = await axios.get(
+        'http://localhost:5000/server/users/external',
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // send the access token through the 'Authorization' header
+          },
         },
-      });
+      );
       this.apiMessage = data;
+    },
+    redirectPost(postId) {
+      this.$router.push(`/post/${postId}`);
+    },
+    formatCompat(dateStr) {
+      // formats mongoose date string into something nicer
+      const date = new Date(dateStr);
+      const month = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      return `${
+        month[date.getMonth()]
+      } ${date.getDate()}  ${date.getFullYear()}`;
+    },
+    truncateBlog(blogPost) {
+      // truncates the blog post
+      if (blogPost.length < 350) return blogPost;
+      return `${blogPost.substring(0, 350)}<em>...read more</em>`;
     },
   },
   mounted() {
-    axios.get(`http://localhost:5000/server/users/${this.$route.params.username}/posts`).then((res) => {
-      this.posts = res.data;
-    });
+    axios
+      .get(
+        `http://localhost:5000/server/users/${this.$route.params.username}/posts`,
+      )
+      .then((res) => {
+        this.posts = res.data;
+      });
   },
 };
 </script>
+

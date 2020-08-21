@@ -1,7 +1,7 @@
 <template>
  <div class="LayoutDefault">
   <b-nav tabs class="navbar navbar-expand-lg navbar-light bg-light">
-   <a class="navbar-brand order-1 mr-0 float-right" href="#">日記 ー Nikki</a>
+   <a class="navbar-brand order-1 mr-0 float-right">日記 ー Nikki</a>
    <button
     class="navbar-toggler"
     type="button"

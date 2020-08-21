@@ -1,19 +1,14 @@
 const express = require('express');
 
 const router = express.Router();
-const bcrypt = require('bcryptjs');
 const jwt = require('express-jwt');
 const jwks = require('jwks-rsa');
 const User = require('../models/User');
+const mongoose = require('mongoose');
+
 const {
   Post,
 } = require('../models/Post');
-const {
-  Comment,
-} = require('../models/Post');
-const {
-  ObjectId,
-} = require('mongoose').Types;
 
 const authConfig = {
   domain: 'dev-o3ydis3u.auth0.com',
@@ -92,7 +87,7 @@ router.post('/register', (req) => {
   });
 });
 
-// GET /users/:email/posts
+// GET /users/:username/posts
 // Route for getting all the posts of a user in json format
 router.get('/:username/posts', (req, res) => {
   User.find({
@@ -128,11 +123,24 @@ router.get('/:username/posts', (req, res) => {
 // });
 
 
-// // GET /users/:username/posts/:id
-// // Route for getting a specific post
-// router.get('/:username/posts/:id', (req, res) => {
-//   res.send(req.post);
-// });
+// GET /users/:username/posts/:id
+// Route for getting a specific post
+router.get('/posts/:id', (req, res) => {
+  Post.find({
+    _id: req.params.id,
+  }).exec((err, post) => {
+    if (err || post.length === 0) return console.log(err || 'Post with given id does not exist!');
+
+    User.findOne({ _id: post[0].postedBy }, (e, user) => {
+      if (e) {
+        res.status(500).json(e);
+      }
+      const postJson = JSON.parse(JSON.stringify(post[0]));
+      postJson.username = user.username;
+      return res.status(200).json(postJson);
+    });
+  });
+});
 
 
 // // POST /users/:username/posts
