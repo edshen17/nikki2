@@ -8,7 +8,10 @@
           <h2 class="title">{{post.title}}</h2>
           <h6>
             Posted by
-            <span class="username" @click="redirectUsername(post.username)">{{post.username}}</span>
+            <span
+              class="username"
+              @click="redirectUsername(post.username)"
+            >{{post.username}}</span>
             on {{formatCompat(post.createdAt)}}
           </h6>
           <p v-html="post.content" class="blog-post"></p>
@@ -19,6 +22,7 @@
                 v-on:click="likePost(post._id)"
                 v-bind:class="{far: !likedPost, fas: likedPost, colorRed: likedPost}"
               ></i>
+              {{post.likeCount}}
             </span>
             <span class="comments">
               <i class="far fa-comment-dots fa-sm ml-2"></i>
@@ -69,13 +73,18 @@ export default {
       } ${date.getDate()}  ${date.getFullYear()}`;
     },
     likePost(pID) {
-      axios
-        .post(
-          `http://localhost:5000/server/users/posts/${pID}/like/${this.$auth.user.nickname}`
-        )
-        .then((res) => {
-          this.likedPost = res.data;
-        });
+      if (!localStorage.getItem("username")) {
+        alert("You must be logged in to like a post!");
+      } else {
+        axios
+          .post(
+            `http://localhost:5000/server/users/posts/${pID}/like/${this.$auth.user.nickname}`
+          )
+          .then((res) => {
+            this.likedPost = res.data;
+            res.data ? (this.post.likeCount += 1) : (this.post.likeCount -= 1);
+          });
+      }
     },
     redirectUsername(username) {
       this.$router.push(`/profile/${username}`);
@@ -84,20 +93,23 @@ export default {
   mounted() {
     axios
       .get(
-        `http://localhost:5000/server/users/posts/${this.$route.params.postId}`,
+        `http://localhost:5000/server/users/posts/${this.$route.params.postId}`
       )
       .then((res) => {
         this.post = res.data;
       });
-    axios
-      .get(
-        `http://localhost:5000/server/users/posts/${
-          this.$route.params.postId
-        }/like/${localStorage.getItem('username')}/true`,
-      )
-      .then((res) => {
-        this.likedPost = res.data;
-      });
+
+    if (localStorage.getItem("username")) {
+      axios
+        .get(
+          `http://localhost:5000/server/users/posts/${
+            this.$route.params.postId
+          }/like/${localStorage.getItem("username")}/true`
+        )
+        .then((res) => {
+          this.likedPost = res.data;
+        });
+    }
   },
 };
 </script>

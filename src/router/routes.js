@@ -35,11 +35,11 @@ const router = new Router({
       },
     },
     {
-      path: '/post/:postId',
+      path: '/profile/:username/post/:postId',
       name: 'Post',
       component: Post,
       meta: {
-        title: 'Nikki | testForNow',
+        title: 'Nikki',
       },
     },
   ],

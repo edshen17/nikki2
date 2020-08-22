@@ -5,6 +5,7 @@ const jwt = require('express-jwt');
 const jwks = require('jwks-rsa');
 const User = require('../models/User');
 const mongoose = require('mongoose');
+const axios = require('axios');
 
 const {
   Post,
@@ -59,7 +60,7 @@ router.post('/posts', (req, res) => {
     username: req.body.postedBy,
   })
     .exec((err, user) => {
-      if (err || user.length === 0) return console.log(err || 'User does not exist!');
+      if (err || user.length === 0) return console.log(err || 'User does not exist! a');
       const postedBy = user[0]._id;
       const title = req.body.title;
       const content = req.body.content;
@@ -98,35 +99,39 @@ router.get('/:username/posts', (req, res) => {
   User.find({
     username: req.params.username,
   }).exec((err, user) => {
-    if (err || user.length === 0) return console.log(err || 'User does not exist!');
+    if (err || user.length === 0) return console.log(err || 'User does not exist! b');
     Post.find({
       postedBy: user[0]._id,
     }).sort({
       createdAt: -1,
-    }).exec((err, posts) => {
+    }).exec(async (err, posts) => {
+      const promiseArray = [];
+
       if (err) console.log(err);
-      return res.status(200).json(posts);
+      posts.forEach((post) => {
+        const promise = axios
+          .get(
+            `http://localhost:5000/server/users/posts/${post._id}/like/${req.params.username}/false`,
+          )
+          .then((resLike) => {
+            let postCopy = { // make a shallow copy to edit
+              _id: post._id,
+              postedBy: post.postedBy,
+              title: post.title,
+              content: post.content,
+              createdAt: post.createdAt,
+              _v: post._v,
+              likeCount: 0,
+            };
+            postCopy.likeCount = resLike.data.length;
+            return postCopy;
+          });
+        promiseArray.push(promise);
+      });
+      return res.status(200).json(await Promise.all(promiseArray));
     });
   });
 });
-
-
-// // POST /users/:username/
-// // Route for editing a user's profile information
-// router.post('/:username', (req, res, next) => {
-//   User.find({
-//     username: req.params.username,
-//   })
-//     .exec((err, user) => {
-//       if (err) return next(err);
-//       user.bio = req.body.bio;
-//       user.save(() => {
-//         if (err) return next(err);
-//         res.status(200).send(user);
-//       });
-//     });
-// });
-
 
 // GET /users/:username/posts/:id
 // Route for getting a specific post
@@ -140,9 +145,13 @@ router.get('/posts/:id', (req, res) => {
       if (e) {
         res.status(500).json(e);
       }
-      const postJson = JSON.parse(JSON.stringify(post[0]));
-      postJson.username = user.username;
-      return res.status(200).json(postJson);
+      Like.countDocuments({ postId: req.params.id }, (er, c) => {
+        if (er) return console.log(er);
+        const postJson = JSON.parse(JSON.stringify(post[0]));
+        postJson.username = user.username;
+        postJson.likeCount = c;
+        return res.status(200).json(postJson);
+      });
     });
   });
 });
@@ -154,7 +163,7 @@ router.post('/posts/:pID/like/:username', (req, res, next) => {
   User.find({
     username: req.params.username,
   }).exec((err, user) => {
-    if (err || user.length === 0) return console.log(err || 'User does not exist!');
+    if (err || user.length === 0) return console.log(err || 'User does not exist! c');
     Like.find({ postId: req.params.pID, likedBy: user[0]._id }).exec((er, likeArr) => {
       if (er) return console.log(err);
       if (likeArr.length === 0) { // user has not liked post yet (like post)
@@ -183,7 +192,7 @@ router.get('/posts/:pID/like/:username/:searchParam', (req, res, next) => {
   User.find({
     username: req.params.username,
   }).exec((err, user) => {
-    if (err || user.length === 0) return console.log(err || 'User does not exist!');
+    if (err || user.length === 0) return console.log(err || `User does not exist! ${req.params.username}`);
     if (req.params.searchParam === 'true') {
       Like.find({ postId: req.params.pID, likedBy: user[0]._id }).exec((er, likeArr) => {
         if (er) return console.log(err);
@@ -200,6 +209,23 @@ router.get('/posts/:pID/like/:username/:searchParam', (req, res, next) => {
     }
   });
 });
+
+// // POST /users/:username/
+// // Route for editing a user's profile information
+// router.post('/:username', (req, res, next) => {
+//   User.find({
+//     username: req.params.username,
+//   })
+//     .exec((err, user) => {
+//       if (err) return next(err);
+//       user.bio = req.body.bio;
+//       user.save(() => {
+//         if (err) return next(err);
+//         res.status(200).send(user);
+//       });
+//     });
+// });
+
 
 // // DELETE /users/:username/posts/:id/
 // // Route for deleting a specific post
