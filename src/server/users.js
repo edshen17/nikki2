@@ -10,6 +10,10 @@ const {
   Post,
 } = require('../models/Post');
 
+const {
+  Like,
+} = require('../models/Like');
+
 const authConfig = {
   domain: 'dev-o3ydis3u.auth0.com',
   audience: 'http://localhost:5000/',
@@ -38,7 +42,7 @@ router.get('/external', jwtCheck, (req, res) => {
 router.get('/:username/json', (req, res, next) => {
   User.find({
     username: req.params.username,
-  }, 'imageURL bio followers following comments posts username email')
+  }, 'imageURL bio followers following comments username')
     .exec((err, users) => {
       if (err) return next(err);
       return res.json({
@@ -64,12 +68,13 @@ router.post('/posts', (req, res) => {
         title,
         content,
       });
-      post.save((err, post) => {
-        user[0].posts.push(post._id);
-        user[0].save((err) => {
-          if (err) return res.status(500).json(err);
-          res.status(200).json(post);
-        });
+      post.save((e, p) => {
+        if (e) return res.status(500).json(err);
+        return res.status(200).json(p);
+        // user[0].posts.push(post._id);
+        // user[0].save((err) => {
+
+        // });
       });
     });
 });
@@ -143,18 +148,58 @@ router.get('/posts/:id', (req, res) => {
 });
 
 
-// // POST /users/:username/posts
-// // Route for liking/unliking a post
-// router.post('/:username/posts/:id/like', (req, res, next) => {
-//   Post.findById(req.params.id, (err, post) => {
-//     if (err) return next(err);
-//     post.likedBy = req.body.likedBy;
-//     post.save(() => {
-//       if (err) return next(err);
-//       res.status(200).send(post);
-//     });
-//   });
-// });
+// POST /posts/:postId/like/:likedByUserId
+// Route for liking/unliking a post
+router.post('/posts/:pID/like/:username', (req, res, next) => {
+  User.find({
+    username: req.params.username,
+  }).exec((err, user) => {
+    if (err || user.length === 0) return console.log(err || 'User does not exist!');
+    Like.find({ postId: req.params.pID, likedBy: user[0]._id }).exec((er, likeArr) => {
+      if (er) return console.log(err);
+      if (likeArr.length === 0) { // user has not liked post yet (like post)
+        const like = new Like({
+          postId: req.params.pID,
+          likedBy: user[0]._id,
+        });
+        like.save((e) => {
+          if (e) return next(e);
+          return res.status(200).send(true);
+        });
+      } else { // user has already liked post (unliked post)
+        Like.findByIdAndDelete(likeArr[0]._id, (errDelete) => {
+          if (errDelete) console.log(errDelete);
+          return res.status(200).send(false);
+        });
+      }
+    });
+  });
+});
+
+// GET /posts/:postId/like/:likedByUserId/:searchParam
+// Route for getting a post's like information. If searchParam = true, return true if user liked post
+// else, return list of users that like the post
+router.get('/posts/:pID/like/:username/:searchParam', (req, res, next) => {
+  User.find({
+    username: req.params.username,
+  }).exec((err, user) => {
+    if (err || user.length === 0) return console.log(err || 'User does not exist!');
+    if (req.params.searchParam === 'true') {
+      Like.find({ postId: req.params.pID, likedBy: user[0]._id }).exec((er, likeArr) => {
+        if (er) return console.log(err);
+        if (likeArr.length === 0) { // user has not liked post yet (like post)
+          return res.status(200).send(false);
+        }
+        return res.status(200).send(true);
+      });
+    } else {
+      Like.find({ postId: req.params.pID }).exec((er, likeArr) => {
+        if (er) return console.log(err);
+        return res.status(200).json(likeArr);
+      });
+    }
+  });
+});
 
 // // DELETE /users/:username/posts/:id/
 // // Route for deleting a specific post

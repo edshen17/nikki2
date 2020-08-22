@@ -39,8 +39,6 @@ const PostSchema = new Schema({
     required: true,
   },
   createdAt: { type: Date, default: Date.now },
-  comments: [{ type: Schema.Types.ObjectId, ref: 'CommentSchema' }],
-  likedBy: [User],
 });
 
 // Edit a post

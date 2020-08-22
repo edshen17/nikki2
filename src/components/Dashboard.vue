@@ -43,7 +43,7 @@ export default {
   },
   computed: {
     username() {
-      return this.$auth.user['http://localhost:8080/username'] || this.$auth.user.name;
+      return this.$auth.user['http://localhost:8080/username'] || this.$auth.user.nickname;
     },
   },
   data() {
@@ -113,6 +113,7 @@ export default {
             const userObj = {
               username: this.$auth.user.nickname,
               email: this.$auth.user.email,
+              imageURL: this.$auth.user.picture,
             };
             // register user 
             axios.post('http://localhost:5000/server/users/register', userObj).catch((err) => {

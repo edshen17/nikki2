@@ -46,11 +46,14 @@ export default {
           .getUser()
           .then((userObj) => {
             this.username = userObj.nickname;
+            localStorage.setItem('username', this.username);
             this.navBarLinks[3].link = `/profile/${this.username}`; // set dynamic username link
           })
           .catch((error) => {
             console.log(error);
           });
+      } else if (!instance.isAuthenticated && localStorage.getItem('username')) {
+        localStorage.removeItem('username');
       }
     });
   },

@@ -40,10 +40,6 @@ const UserSchema = new mongoose.Schema({
     type: [{ type: Schema.Types.ObjectId, ref: 'CommentSchema' }],
     default: [],
   },
-  posts: {
-    type: [{ type: Schema.Types.ObjectId, ref: 'PostSchema' }],
-    default: [],
-  },
 });
 
 const User = mongoose.model('User', UserSchema);

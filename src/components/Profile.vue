@@ -3,20 +3,22 @@
     <div class="row">
       <div class="col-sm-2"></div>
       <div class="col-sm-8">
+         <img v-if='userInfo' class="rounded-circle z-depth-2 center-image" alt="100x100" :src='userInfo.imageURL'
+          data-holder-rendered="true">
+          <h3 class='center my-2'>{{$route.params.username}}</h3>
+        <p>{{this.userInfo}}</p>
         <div class="py-2" v-if='posts'>
             <div v-for="post in posts" :key="post._id" :id="post._id" @click="redirectPost(post._id)"
             @mouseover="hover = post._id" @mouseleave="hover = false" :class="{active: hover === post._id }">
                 <h2  class="title"> {{post.title}} </h2>
-                <h6> Posted on {{$route.params.username}} {{formatCompat(post.createdAt)}} </h6>
+                <h6> Posted by {{$route.params.username}} on {{formatCompat(post.createdAt)}} </h6>
                 <p v-html='truncateBlog(post.content)' class='blog-post-preview'></p>
                 <div class='icons mb-4'>
                   <span class='likes'>
                       <i class='far fa-heart fa-sm' v-on:click='likePost(post)' v-bind:class='{far: !post.liked, fas: post.liked, colorRed: post.liked}'></i>
-                      {{post.likedBy.length}}
                   </span>
                   <span class='comments'>
                       <i class='far fa-comment-dots fa-sm ml-2'></i>
-                      {{post.comments.length}}
                   </span>
                 </div>
             </div>
@@ -40,6 +42,7 @@ export default {
     return {
       apiMessage: '',
       posts: [],
+      userInfo: null,
       hover: false,
     };
   },
@@ -96,6 +99,13 @@ export default {
       )
       .then((res) => {
         this.posts = res.data;
+      });
+    axios
+      .get(
+        `http://localhost:5000/server/users/${this.$route.params.username}/json`,
+      )
+      .then((res) => {
+        this.userInfo = res.data.users[0];
       });
   },
 };
