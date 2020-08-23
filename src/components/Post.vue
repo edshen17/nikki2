@@ -78,7 +78,7 @@ export default {
       } else {
         axios
           .post(
-            `http://localhost:5000/server/users/posts/${pID}/like/${this.$auth.user.nickname}`
+            `http://localhost:5000/server/users/posts/${pID}/like/${localStorage.getItem("username")}`,
           )
           .then((res) => {
             this.likedPost = res.data;
