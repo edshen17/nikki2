@@ -37,6 +37,7 @@
 <script>
 import axios from "axios";
 import Quill from "quill";
+import { getInstance } from "../auth/index";
 import LayoutDefault from "./layouts/LayoutDefault";
 
 export default {
@@ -92,31 +93,49 @@ export default {
     },
   },
 
-  mounted() {
+  async mounted() {
     this.initializeEditor();
-    // first check if user exist in db. If user does not exist, create a new user
-    axios
-      .get(
-        `http://localhost:5000/server/users/${localStorage.getItem("username")}/json`
-      )
-      .then((res) => {
-        if (res.data.users.length === 0) {
-          const userObj = {
-            username: this.username,
-            email: this.$auth.user.email,
-            imageURL: this.$auth.user.picture,
-          };
-          // register user
-          axios
-            .post("http://localhost:5000/server/users/register", userObj)
-            .catch((err) => {
-              console.log(err);
-            });
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+
+    const instance = getInstance();
+    instance.$watch("loading", (loading) => {
+      if (loading === false && instance.isAuthenticated) {
+        instance
+          .getUser()
+          .then((authObj) => {
+            const username =
+              authObj["http://localhost:8080/username"] || authObj.nickname;
+            // first check if user exist in db. If user does not exist, create a new user
+            axios
+              .get(
+                `http://localhost:5000/server/users/${username}/json`
+              )
+              .then((res) => {
+                if (res.data.users.length === 0) {
+                  const userObj = {
+                    username,
+                    email: this.$auth.user.email,
+                    imageURL: this.$auth.user.picture,
+                  };
+                  // register user
+                  axios
+                    .post(
+                      "http://localhost:5000/server/users/register",
+                      userObj
+                    )
+                    .catch((err) => {
+                      console.log(err);
+                    });
+                }
+              })
+              .catch((err) => {
+                console.log(err);
+              });
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+      }
+    });
   },
 
   beforeDestroy() {
