@@ -29,7 +29,7 @@
               <span class="likes">
                 <i
                   class="far fa-heart fa-sm"
-                  v-bind:class="{far: !post.likedPost, fas: post.likedPost, colorRed: post.likedPost}"
+                  v-bind:class="{far: !post.isLikedByClient, fas: post.isLikedByClient, colorRed: post.isLikedByClient}"
                 ></i>
                 {{ post.likeCount}}
               </span>
@@ -115,19 +115,6 @@ export default {
       )
       .then((res) => {
         this.posts = res.data;
-        if (localStorage.getItem("username")) {
-          this.posts.forEach((post) => {
-            axios
-              .get(
-                `http://localhost:5000/server/users/posts/${
-                  post._id
-                }/like/${localStorage.getItem("username")}/true`,
-              )
-              .then((r) => {
-                post.likedPost = r.data;
-              });
-          });
-        }
       });
     axios
       .get(

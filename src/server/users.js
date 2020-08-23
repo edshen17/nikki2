@@ -72,10 +72,6 @@ router.post('/posts', (req, res) => {
       post.save((e, p) => {
         if (e) return res.status(500).json(err);
         return res.status(200).json(p);
-        // user[0].posts.push(post._id);
-        // user[0].save((err) => {
-
-        // });
       });
     });
 });
@@ -100,18 +96,17 @@ router.get('/:username/posts', (req, res) => {
     username: req.params.username,
   }).exec((err, user) => {
     if (err || user.length === 0) return console.log(err || 'User does not exist! b');
-    Post.find({
-      postedBy: user[0]._id,
-    }).sort({
+    let dbQuery = {};
+    !req.query.pid ? dbQuery = {postedBy: user[0]._id} : dbQuery = {postedBy: user[0]._id, _id: req.query.pid};
+    Post.find(dbQuery).sort({
       createdAt: -1,
     }).exec(async (err, posts) => {
       const promiseArray = [];
-
       if (err) console.log(err);
       posts.forEach((post) => {
         const promise = axios
           .get(
-            `http://localhost:5000/server/users/posts/${post._id}/like/${req.params.username}/false`,
+            `http://localhost:5000/server/users/posts/${post._id}/like/${req.params.username}`,
           )
           .then((resLike) => {
             let postCopy = { // make a shallow copy to edit
@@ -121,9 +116,9 @@ router.get('/:username/posts', (req, res) => {
               content: post.content,
               createdAt: post.createdAt,
               _v: post._v,
-              likeCount: 0,
             };
-            postCopy.likeCount = resLike.data.length;
+            postCopy.likeCount = resLike.data.likeArr.length;
+            postCopy.isLikedByClient = resLike.data.isLikedByClient;
             return postCopy;
           });
         promiseArray.push(promise);
@@ -132,30 +127,6 @@ router.get('/:username/posts', (req, res) => {
     });
   });
 });
-
-// GET /users/:username/posts/:id
-// Route for getting a specific post
-router.get('/posts/:id', (req, res) => {
-  Post.find({
-    _id: req.params.id,
-  }).exec((err, post) => {
-    if (err || post.length === 0) return console.log(err || 'Post with given id does not exist!');
-
-    User.findOne({ _id: post[0].postedBy }, (e, user) => {
-      if (e) {
-        res.status(500).json(e);
-      }
-      Like.countDocuments({ postId: req.params.id }, (er, c) => {
-        if (er) return console.log(er);
-        const postJson = JSON.parse(JSON.stringify(post[0]));
-        postJson.username = user.username;
-        postJson.likeCount = c;
-        return res.status(200).json(postJson);
-      });
-    });
-  });
-});
-
 
 // POST /posts/:postId/like/:likedByUserId
 // Route for liking/unliking a post
@@ -186,27 +157,21 @@ router.post('/posts/:pID/like/:username', (req, res, next) => {
 });
 
 // GET /posts/:postId/like/:likedByUserId/:searchParam
-// Route for getting a post's like information. If searchParam = true, return true if user liked post
-// else, return list of users that like the post
-router.get('/posts/:pID/like/:username/:searchParam', (req, res, next) => {
+// Route for getting a post's like information.
+router.get('/posts/:pID/like/:username', (req, res) => {
   User.find({
     username: req.params.username,
   }).exec((err, user) => {
     if (err || user.length === 0) return console.log(err || `User does not exist! ${req.params.username}`);
-    if (req.params.searchParam === 'true') {
-      Like.find({ postId: req.params.pID, likedBy: user[0]._id }).exec((er, likeArr) => {
-        if (er) return console.log(err);
-        if (likeArr.length === 0) { // user has not liked post yet (like post)
-          return res.status(200).send(false);
-        }
-        return res.status(200).send(true);
-      });
-    } else {
-      Like.find({ postId: req.params.pID }).exec((er, likeArr) => {
-        if (er) return console.log(err);
-        return res.status(200).json(likeArr);
-      });
-    }
+    Like.find({ postId: req.params.pID }).exec((er, likeArr) => {
+      if (er) return console.log(err);
+      const isLikedByClient = likeArr.some(like => like.likedBy = user[0]._id);
+      const likeObj = {
+        likeArr,
+        isLikedByClient,
+      };
+      return res.status(200).json(likeObj);
+    });
   });
 });
 

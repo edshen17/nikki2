@@ -20,7 +20,7 @@
               <i
                 class="far fa-heart fa-sm"
                 v-on:click="likePost(post._id)"
-                v-bind:class="{far: !likedPost, fas: likedPost, colorRed: likedPost}"
+                v-bind:class="{far: !post.isLikedByClient, fas: post.isLikedByClient, colorRed: post.isLikedByClient}"
               ></i>
               {{post.likeCount}}
             </span>
@@ -47,7 +47,6 @@ export default {
   data() {
     return {
       post: null,
-      likedPost: false,
     };
   },
   methods: {
@@ -81,7 +80,7 @@ export default {
             `http://localhost:5000/server/users/posts/${pID}/like/${localStorage.getItem("username")}`,
           )
           .then((res) => {
-            this.likedPost = res.data;
+            this.post.isLikedByClient = res.data;
             res.data ? (this.post.likeCount += 1) : (this.post.likeCount -= 1);
           });
       }
@@ -93,23 +92,11 @@ export default {
   mounted() {
     axios
       .get(
-        `http://localhost:5000/server/users/posts/${this.$route.params.postId}`
+        `http://localhost:5000/server/users/${this.$route.params.username}/posts/?pid=${this.$route.params.postId}`,
       )
       .then((res) => {
-        this.post = res.data;
+        this.post = res.data[0];
       });
-
-    if (localStorage.getItem("username")) {
-      axios
-        .get(
-          `http://localhost:5000/server/users/posts/${
-            this.$route.params.postId
-          }/like/${localStorage.getItem("username")}/true`
-        )
-        .then((res) => {
-          this.likedPost = res.data;
-        });
-    }
   },
 };
 </script>
