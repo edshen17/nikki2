@@ -175,21 +175,15 @@ router.get('/posts/:pID/like/:username', (req, res) => {
   });
 });
 
-// // POST /users/:username/
-// // Route for editing a user's profile information
-// router.post('/:username', (req, res, next) => {
-//   User.find({
-//     username: req.params.username,
-//   })
-//     .exec((err, user) => {
-//       if (err) return next(err);
-//       user.bio = req.body.bio;
-//       user.save(() => {
-//         if (err) return next(err);
-//         res.status(200).send(user);
-//       });
-//     });
-// });
+// POST /users/:username/
+// Route for editing a user's profile information
+router.put('/:username/updateProfile', (req, res, next) => {
+  User.findOneAndUpdate({username: req.params.username }, req.body)
+    .exec((err, user) => {
+      if (err) return next(err);
+      return res.status(200).json(user);
+    });
+});
 
 
 // // DELETE /users/:username/posts/:id/

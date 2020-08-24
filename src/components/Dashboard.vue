@@ -1,11 +1,10 @@
 <template>
-  <div class="simple-editor">
-    <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.6/quill.snow.css" />
+  <div class="dashboard">
     <div class="row">
       <div class="col-sm-1"></div>
       <div class="col-sm-10">
         <h1 class="center mt-4">Dashboard</h1>
-        <p class="center mb-3">Welcome, {{username}}!</p>
+        <p class="center mb-3">Welcome, {{this.username}}!</p>
         <form class="mx-5 lead">
           <div class="form-group">
             <label for="postTitle">Post Title</label>
@@ -21,7 +20,7 @@
         </form>
         <div class="mx-5 lead">
           <label>Body</label>
-          <div ref="editorNode"></div>
+          <simple-editor></simple-editor>
           <button
             type="submit"
             class="btn btn-primary btn-lg mt-3"
@@ -50,20 +49,13 @@ export default {
       type: String,
     },
   },
-  computed: {
-    username() {
-      return (
-        this.$auth.user["http://localhost:8080/username"] ||
-        this.$auth.user.nickname
-      );
-    },
-  },
   data() {
     return {
       floatRight: {
         float: "right",
       },
       postTitle: "",
+      username: "",
       editorContent: null,
       editorInstance: null,
       editorOpts: {
@@ -94,8 +86,6 @@ export default {
   },
 
   async mounted() {
-    this.initializeEditor();
-
     const instance = getInstance();
     instance.$watch("loading", (loading) => {
       if (loading === false && instance.isAuthenticated) {
@@ -104,7 +94,8 @@ export default {
           .then((authObj) => {
             const username =
               authObj["http://localhost:8080/username"] || authObj.nickname;
-            // first check if user exist in db. If user does not exist, create a new user
+            this.username = username;
+            // first check if user exists in db. If the user does not exist, create a new user
             axios
               .get(
                 `http://localhost:5000/server/users/${username}/json`
@@ -114,7 +105,7 @@ export default {
                   const userObj = {
                     username,
                     email: this.$auth.user.email,
-                    imageURL: this.$auth.user.picture,
+                    imageURL: this.$auth.user.picture || 'https://t4.ftcdn.net/jpg/00/64/67/63/240_F_64676383_LdbmhiNM6Ypzb3FM4PPuFP9rHe7ri8Ju.jpg',
                   };
                   // register user
                   axios
@@ -138,26 +129,7 @@ export default {
     });
   },
 
-  beforeDestroy() {
-    this.editorInstance.off("text-change");
-  },
-
   methods: {
-    initializeEditor() {
-      this.$refs.editorNode.innerHTML = this.value;
-      this.editorInstance = new Quill(this.$refs.editorNode, this.editorOpts);
-      this.editorInstance.on("text-change", this.onEditorContentChange);
-      this.setEditorContent();
-    },
-    onEditorContentChange() {
-      this.setEditorContent();
-      this.$emit("input", this.editorContent);
-    },
-    setEditorContent() {
-      this.editorContent = this.editorInstance.getText().trim()
-        ? this.editorInstance.root.innerHTML
-        : "";
-    },
     createPost() {
       if (this.editorContent && this.postTitle) {
         // create post

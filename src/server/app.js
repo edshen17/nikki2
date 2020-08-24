@@ -17,7 +17,7 @@ app.use('/server/users', users);
 const db = require('../config/keys').MongoURI;
 
 // Connect to Mongo DB
-mongoose.connect(db, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(db, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false })
   .then(() => console.log('connected to MongoDB'))
   .catch(err => console.log(err));
 
