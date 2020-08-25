@@ -2,6 +2,7 @@
   <div class="simple-editor">
     <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.6/quill.snow.css" />
     <div ref="editorNode"></div>
+    <h6 class="mt-1">{{wordCount - 1}} / {{this.limit}}</h6>
   </div>
 </template>
 
@@ -13,6 +14,9 @@ export default {
     value: {
       default: "",
       type: String,
+    },
+    limit: {
+      type: Number,
     },
   },
   data() {
@@ -35,6 +39,7 @@ export default {
         },
         theme: "snow",
       },
+      wordCount: null,
     };
   },
 
@@ -66,9 +71,17 @@ export default {
       this.$emit("input", this.editorContent);
     },
     setEditorContent() {
+      const quillObj = this.editorInstance.clipboard.quill;
+      quillObj.on("text-change", () => {
+        if (this.limit && quillObj.getLength() > this.limit) {
+          quillObj.deleteText(this.limit, quillObj.getLength());
+        }
+      });
+
       this.editorContent = this.editorInstance.getText().trim()
         ? this.editorInstance.root.innerHTML
         : "";
+      this.wordCount = quillObj.getLength();
     },
   },
 };

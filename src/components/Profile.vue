@@ -35,35 +35,48 @@
               @mouseover="imageHover = true"
               @mouseleave="imageHover = false"
             >
-              <span>
-                <img
-                  v-if="userInfo"
-                  class="rounded-circle z-depth-2 center-image"
-                  alt="100x100"
-                  :src="userInfo.imageURL"
-                  data-holder-rendered="true"
-                  :class="{overlay: imageHover }"
-                  @click="$refs.file.click()"
-                />
-                <i class="fas fa-edit centered" v-if="imageHover"></i>
-                <input
-                  type="file"
-                  ref="file"
-                  class="hide"
-                  @change="selectImage($event)"
-                  accept="image/*"
-                />
-              </span>
+              <img
+                v-if="userInfo"
+                class="rounded-circle z-depth-2 center-image"
+                alt="100x100"
+                :src="userInfo.imageURL"
+                data-holder-rendered="true"
+                :class="{overlay: imageHover && isMyProfile}"
+                @click="$refs.file.click()"
+              />
+              <i class="fas fa-edit centered" v-if="imageHover && isMyProfile"></i>
+              <input
+                type="file"
+                ref="file"
+                class="hide"
+                @change="selectImage($event)"
+                accept="image/*"
+                v-if="isMyProfile"
+              />
             </div>
-            <h3 class="center my-2">{{$route.params.username}}</h3>
-            <p v-if="this.userInfo" v-show="!isEditing">{{this.userInfo.bio}}</p>
-            <simple-editor v-model="bioContent" v-show="isEditing"></simple-editor>
-            <b-button variant="primary" class="floatRight" @click="isEditing = true;" v-show="!isEditing">Edit Bio</b-button>
-            <b-button variant="primary" class="floatRight" v-show="isEditing">Save Bio</b-button>
-            <b-button variant="info" class="floatRight" v-show="isEditing">Cancel</b-button>
-            
+            <h3 class="center mb-2 mt-2">{{$route.params.username}}</h3>
+            <p v-html="this.userInfo.bio" v-if="this.userInfo" v-show="!isEditing"></p>
+            <simple-editor v-model="bioContent" v-show="isEditing" :limit="200"></simple-editor>
+            <b-button
+              pill variant="primary"
+              class="floatRight bio-pill"
+              @click="isEditing = true;"
+              v-show="!isEditing && isMyProfile"
+            >Edit Bio</b-button>
+            <b-button
+              variant="primary"
+              class="floatRight ml-2"
+              v-show="isEditing"
+              @click="saveBio"
+            >Save Bio</b-button>
+            <b-button
+              variant="info"
+              class="floatRight"
+              v-show="isEditing"
+              @click="cancelEdit"
+            >Cancel</b-button>
           </div>
-          <div class="py-2" v-if="posts">
+          <div v-if="posts" class="mt-2">
             <div
               v-for="post in posts"
               :key="post._id"
@@ -102,11 +115,11 @@ import axios from "axios";
 import { Cropper } from "vue-advanced-cropper";
 import LayoutDefault from "./layouts/LayoutDefault";
 import SimpleEditor from "./SimpleEditor";
-Vue.component('simple-editor', SimpleEditor);
 
 export default {
   components: {
     Cropper,
+    SimpleEditor,
   },
   created() {
     this.$emit("update:layout", LayoutDefault);
@@ -121,7 +134,7 @@ export default {
       image: null,
       imageHover: false,
       isSaved: false,
-      bioContent: '',
+      bioContent: "",
       isEditing: false,
     };
   },
@@ -132,11 +145,29 @@ export default {
     },
   },
   methods: {
+    cancelEdit() {
+      this.isEditing = false;
+      this.bioContent = this.userInfo.bio;
+    },
     defaultSize() {
       return {
         width: 900,
         height: 900,
       };
+    },
+    saveBio() {
+      axios
+        .put(
+          `http://localhost:5000/server/users/${this.$route.params.username}/updateProfile`,
+          { bio: this.bioContent }
+        )
+        .then(() => {
+          this.userInfo.bio = this.bioContent;
+          this.isEditing = false;
+        })
+        .catch((err) => {
+          console.log(err);
+        });
     },
     onUpload() {
       const form = new FormData();
@@ -158,7 +189,7 @@ export default {
               axios
                 .put(
                   `http://localhost:5000/server/users/${this.$route.params.username}/updateProfile`,
-                  { imageURL: res.data }
+                  { imageURL: res.data },
                 )
                 .catch((err) => {
                   console.log(err);
