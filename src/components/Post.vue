@@ -92,7 +92,12 @@ export default {
   mounted() {
     axios
       .get(
-        `http://localhost:5000/server/users/${this.$route.params.username}/posts/?pid=${this.$route.params.postId}`,
+        `http://localhost:5000/server/users/${this.$route.params.username}/posts/`, {
+          params: {
+            pid: this.$route.params.postId,
+            clientName: 'greencopter4444',
+          },
+        },
       )
       .then((res) => {
         this.post = res.data[0];

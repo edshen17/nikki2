@@ -97,16 +97,17 @@ router.get('/:username/posts', (req, res) => {
   }).exec((err, user) => {
     if (err || user.length === 0) return console.log(err || 'User does not exist! b');
     let dbQuery = {};
-    !req.query.pid ? dbQuery = {postedBy: user[0]._id} : dbQuery = {postedBy: user[0]._id, _id: req.query.pid};
+    !req.query.pid ? dbQuery = { postedBy: user[0]._id } : dbQuery = { postedBy: user[0]._id, _id: req.query.pid };
     Post.find(dbQuery).sort({
       createdAt: -1,
     }).exec(async (err, posts) => {
       const promiseArray = [];
+      const clientName = req.query.clientName || '';
       if (err) console.log(err);
       posts.forEach((post) => {
         const promise = axios
           .get(
-            `http://localhost:5000/server/users/posts/${post._id}/like/${req.params.username}`,
+            `http://localhost:5000/server/users/posts/${post._id}/like/${clientName}`,
           )
           .then((resLike) => {
             let postCopy = { // make a shallow copy to edit
@@ -120,7 +121,7 @@ router.get('/:username/posts', (req, res) => {
             postCopy.likeCount = resLike.data.likeArr.length;
             postCopy.isLikedByClient = resLike.data.isLikedByClient;
             return postCopy;
-          });
+          }).catch((err) => console.log('failed to send!'));
         promiseArray.push(promise);
       });
       return res.status(200).json(await Promise.all(promiseArray));
@@ -158,27 +159,39 @@ router.post('/posts/:pID/like/:username', (req, res, next) => {
 
 // GET /posts/:postId/like/:likedByUserId/:searchParam
 // Route for getting a post's like information.
-router.get('/posts/:pID/like/:username', (req, res) => {
-  User.find({
-    username: req.params.username,
-  }).exec((err, user) => {
-    if (err || user.length === 0) return console.log(err || `User does not exist! ${req.params.username}`);
-    Like.find({ postId: req.params.pID }).exec((er, likeArr) => {
-      if (er) return console.log(err);
-      const isLikedByClient = likeArr.some(like => like.likedBy = user[0]._id);
+router.get('/posts/:pID/like/:username?', (req, res) => {
+  if (!req.params.username) { // user not logged in
+    Like.find({ postId: req.params.pID }).exec((err, likeArr) => {
+      if (err) return res.status(404).json(err);
       const likeObj = {
         likeArr,
-        isLikedByClient,
+        isLikedByClient: false,
       };
+
       return res.status(200).json(likeObj);
     });
-  });
+  } else {
+    User.find({
+      username: req.params.username,
+    }).exec((err, user) => {
+      if (err || user.length === 0) return res.status(404).json(err || `User does not exist! ${req.params.username}`);
+      Like.find({ postId: req.params.pID }).exec((er, likeArr) => {
+        if (er) return res.status(404).json(er);
+        const isLikedByClient = likeArr.some((like => { return like.likedBy.equals(user[0]._id) }));
+        const likeObj = {
+          likeArr,
+          isLikedByClient,
+        };
+        return res.status(200).json(likeObj);
+      });
+    });
+  }
 });
 
 // POST /users/:username/
 // Route for editing a user's profile information
 router.put('/:username/updateProfile', (req, res, next) => {
-  User.findOneAndUpdate({username: req.params.username }, req.body)
+  User.findOneAndUpdate({ username: req.params.username }, req.body)
     .exec((err, user) => {
       if (err) return next(err);
       return res.status(200).json(user);

@@ -268,10 +268,11 @@ export default {
     },
   },
   mounted() {
+    let clientName = localStorage.getItem("username") || '';
     // get post data to display
     axios
       .get(
-        `http://localhost:5000/server/users/${this.$route.params.username}/posts`
+        `http://localhost:5000/server/users/${this.$route.params.username}/posts/?clientName=${clientName}`,
       )
       .then((res) => {
         this.posts = res.data;
