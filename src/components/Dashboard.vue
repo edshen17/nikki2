@@ -15,12 +15,13 @@
               aria-describedby="postTitle"
               placeholder="Enter title"
               v-model="postTitle"
+              maxlength="60"
             />
           </div>
         </form>
         <div class="mx-5 lead">
           <label>Body</label>
-          <simple-editor></simple-editor>
+          <simple-editor v-model="content"></simple-editor>
           <button
             type="submit"
             class="btn btn-primary btn-lg mt-3"
@@ -54,6 +55,7 @@ export default {
       },
       postTitle: "",
       username: localStorage.getItem("username"),
+      content: '',
     };
   },
   async mounted() {
@@ -103,12 +105,12 @@ export default {
 
   methods: {
     createPost() {
-      if (this.editorContent && this.postTitle) {
+      if (this.content && this.postTitle) {
         // create post
         const newPost = {
           postedBy: this.username,
           title: this.postTitle,
-          content: this.editorContent,
+          content: this.content,
         };
 
         axios

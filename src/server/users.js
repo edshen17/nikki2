@@ -116,6 +116,7 @@ router.get('/:username/posts', (req, res) => {
               title: post.title,
               content: post.content,
               createdAt: post.createdAt,
+              editedOn: post.editedOn,
               _v: post._v,
             };
             postCopy.likeCount = resLike.data.likeArr.length;
@@ -195,6 +196,15 @@ router.put('/:username/updateProfile', (req, res, next) => {
     .exec((err, user) => {
       if (err) return next(err);
       return res.status(200).json(user);
+    });
+});
+
+// Route for editing a user's post
+router.put('/:username/updatePost/:pID', (req, res, next) => {
+  Post.findOneAndUpdate({ _id: req.params.pID }, req.body)
+    .exec((err, post) => {
+      if (err) return next(err);
+      return res.status(200).json(post);
     });
 });
 

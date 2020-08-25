@@ -39,14 +39,8 @@ const PostSchema = new Schema({
     required: true,
   },
   createdAt: { type: Date, default: Date.now },
+  editedOn: { type: Date, default: Date.now },
 });
-
-// Edit a post
-PostSchema.method('edit', function (edits, callback) {
-  Object.assign(this, edits, { editedAt: new Date() });
-  this.parent().save(callback);
-});
-
 
 const Comment = mongoose.model('Comment', CommentSchema);
 const Post = mongoose.model('Post', PostSchema);

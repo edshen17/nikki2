@@ -159,7 +159,7 @@ export default {
       axios
         .put(
           `http://localhost:5000/server/users/${this.$route.params.username}/updateProfile`,
-          { bio: this.bioContent }
+          { bio: this.bioContent },
         )
         .then(() => {
           this.userInfo.bio = this.bioContent;

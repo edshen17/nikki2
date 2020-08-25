@@ -5,16 +5,42 @@
       <div class="col-sm-8">
         <div class="py-2" v-if="post">
           <p>{{post}}</p>
-          <h2 class="title">{{post.title}}</h2>
-          <h6>
+          <h2 class="title" v-show="!isEditing">{{post.title}}</h2>
+          <input
+            type="text"
+            class="form-control mb-3"
+            id="postTitle"
+            aria-describedby="postTitle"
+            placeholder="Enter title"
+            v-model="postTitle"
+            v-show="isEditing"
+            maxlength="60"
+          />
+          <h6 v-show="!isEditing">
             Posted by
             <span
               class="username"
-              @click="redirectUsername(post.username)"
-            >{{post.username}}</span>
+              @click="redirectUsername($route.params.username)"
+            >{{this.$route.params.username}}</span>
             on {{formatCompat(post.createdAt)}}
+            <span v-if="editedPost" :title="`Edited on ${new Date(this.post.editedOn)}`">(edited)</span>
           </h6>
-          <p v-html="post.content" class="blog-post"></p>
+          <p v-html="post.content" class="blog-post" v-show="!isEditing"></p>
+          <simple-editor v-model="postContent" v-show="isEditing"></simple-editor>
+          <b-button
+            pill
+            variant="primary"
+            class="floatRight bio-pill"
+            @click="isEditing = true;"
+            v-show="!isEditing && isMyPost"
+          >Edit Post</b-button>
+          <b-button
+            variant="primary"
+            class="floatRight ml-2"
+            v-show="isEditing"
+            @click="savePost"
+          >Save Post</b-button>
+          <b-button variant="info" class="floatRight" v-show="isEditing" @click="cancelEdit">Cancel</b-button>
           <div class="icons mb-4">
             <span class="likes">
               <i
@@ -36,10 +62,13 @@
 
 <script>
 import axios from "axios";
-
+import SimpleEditor from "./SimpleEditor";
 import LayoutDefault from "./layouts/LayoutDefault";
 
 export default {
+  components: {
+    SimpleEditor,
+  },
   created() {
     this.$emit("update:layout", LayoutDefault);
   },
@@ -47,9 +76,46 @@ export default {
   data() {
     return {
       post: null,
+      isEditing: false,
+      postTitle: "",
+      postContent: "",
     };
   },
+  computed: {
+    isMyPost() {
+      // checks if user is viewing their own post
+      return localStorage.getItem("username") === this.$route.params.username;
+    },
+    editedPost() {
+      return this.post.editedOn !== this.post.createdAt;
+    },
+  },
   methods: {
+    savePost() {
+      axios
+        .put(
+          `http://localhost:5000/server/users/${this.$route.params.username}/updatePost/${this.post._id}`,
+          {
+            title: this.postTitle,
+            content: this.postContent,
+            editedOn: new Date(),
+          }
+        )
+        .then(() => {
+          this.post.title = this.postTitle;
+          this.post.content = this.postContent;
+          this.isEditing = false;
+          this.post.editedOn = new Date();
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+    cancelEdit() {
+      this.isEditing = false;
+      this.postContent = this.post.content;
+      this.postTitle = this.post.title;
+    },
     formatCompat(dateStr) {
       // formats mongoose date string into something nicer
       const date = new Date(dateStr);
@@ -77,7 +143,9 @@ export default {
       } else {
         axios
           .post(
-            `http://localhost:5000/server/users/posts/${pID}/like/${localStorage.getItem("username")}`,
+            `http://localhost:5000/server/users/posts/${pID}/like/${localStorage.getItem(
+              "username"
+            )}`
           )
           .then((res) => {
             this.post.isLikedByClient = res.data;
@@ -92,15 +160,18 @@ export default {
   mounted() {
     axios
       .get(
-        `http://localhost:5000/server/users/${this.$route.params.username}/posts/`, {
+        `http://localhost:5000/server/users/${this.$route.params.username}/posts/`,
+        {
           params: {
             pid: this.$route.params.postId,
-            clientName: 'greencopter4444',
+            clientName: localStorage.getItem("username"),
           },
-        },
+        }
       )
       .then((res) => {
         this.post = res.data[0];
+        this.postTitle = res.data[0].title;
+        this.postContent = res.data[0].content;
       });
   },
 };
