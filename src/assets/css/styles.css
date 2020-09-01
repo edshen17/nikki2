@@ -2,6 +2,10 @@
   float: right;
 }
 
+.dropdown-toggle:after {
+  display: none;
+ }
+
 .imgContainer {
   position: relative;
   text-align: center;
@@ -23,6 +27,10 @@
 	background: #38d890;
 }
 
+i {
+  cursor: pointer;
+}
+
 .button input {
 	display: none;
 }
@@ -31,19 +39,18 @@
   color: red; 
 }
 
+.no-padding {
+  padding: 0 0 0 0 !important;
+}
+
 body {
-  font-family : 'ヒラギノ角ゴ ProN' , 'Hiragino Kaku Gothic ProN' , '游ゴシック' , '游ゴシック体' , YuGothic , 'Yu Gothic' , 'メイリオ' , Meiryo , 'ＭＳ ゴシック' , 'MS Gothic' , HiraKakuProN-W3 , 'TakaoExゴシック' , TakaoExGothic , 'MotoyaLCedar' , 'Droid Sans Japanese' , sans-serif !important;
+  /* font-family : 'ヒラギノ角ゴ ProN' , 'Hiragino Kaku Gothic ProN' , '游ゴシック' , '游ゴシック体' , YuGothic , 'Yu Gothic' , 'メイリオ' , Meiryo , 'ＭＳ ゴシック' , 'MS Gothic' , HiraKakuProN-W3 , 'TakaoExゴシック' , TakaoExGothic , 'MotoyaLCedar' , 'Droid Sans Japanese' , sans-serif !important; */
   line-height: 1.75 !important;
   word-wrap: break-word;
 }
 
 #main {
   z-index: -1;
-}
-
-.title {
-  font-family : 'ヒラギノ角ゴ ProN' , 'Hiragino Kaku Gothic ProN' , '游ゴシック' , '游ゴシック体' , YuGothic , 'Yu Gothic' , 'メイリオ' , Meiryo , 'ＭＳ ゴシック' , 'MS Gothic' , HiraKakuProN-W3 , 'TakaoExゴシック' , TakaoExGothic , 'MotoyaLCedar' , 'Droid Sans Japanese' , sans-serif !important;
-  font-size: 1.23em;
 }
 
 .blog-post-preview {
@@ -116,7 +123,7 @@ z-index: 10;
 /* Small-Medium devices */
 @media screen and (max-width: 992px) { 
   body {
-    line-height: 1.6 !important;
+    line-height: 1.6;
   }
 }
 
@@ -138,10 +145,6 @@ z-index: 10;
     background-color: white;
     position:relative;
     padding-bottom:3%;
-  }
-
-  body {
-    font-size: 1.3rem !important;
   }
 
   .welcome {

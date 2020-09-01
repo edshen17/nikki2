@@ -90,7 +90,7 @@ router.post('/register', (req) => {
 });
 
 // GET /users/:username/posts
-// Route for getting all the posts of a user in json format
+// Route for getting the posts of a user in json format 
 router.get('/:username/posts', (req, res) => {
   User.find({
     username: req.params.username,
@@ -98,13 +98,13 @@ router.get('/:username/posts', (req, res) => {
     if (err || user.length === 0) return console.log(err || 'User does not exist! b');
     let dbQuery = {};
     !req.query.pid ? dbQuery = { postedBy: user[0]._id } : dbQuery = { postedBy: user[0]._id, _id: req.query.pid };
-    Post.find(dbQuery).sort({
-      createdAt: -1,
-    }).exec(async (err, posts) => {
+    req.query.page = parseInt(req.query.page);
+    req.query.limit = parseInt(req.query.limit);
+    Post.paginate(dbQuery, { page: req.query.page, limit: req.query.limit, sort: { createdAt: -1 } }, async (err, posts) => {
       const promiseArray = [];
       const clientName = req.query.clientName || '';
       if (err) console.log(err);
-      posts.forEach((post) => {
+      posts.docs.forEach((post) => {
         const promise = axios
           .get(
             `http://localhost:5000/server/users/posts/${post._id}/like/${clientName}`,
@@ -129,6 +129,7 @@ router.get('/:username/posts', (req, res) => {
     });
   });
 });
+
 
 // POST /posts/:postId/like/:likedByUserId
 // Route for liking/unliking a post

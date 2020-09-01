@@ -4,7 +4,6 @@
       <div class="col-sm-2"></div>
       <div class="col-sm-8">
         <div class="py-2" v-if="post">
-          <p>{{post}}</p>
           <h2 class="title" v-show="!isEditing">{{post.title}}</h2>
           <input
             type="text"
@@ -16,24 +15,24 @@
             v-show="isEditing"
             maxlength="60"
           />
-          <h6 v-show="!isEditing">
+          <div v-show="!isEditing">
             Posted by
-            <span
+            <i
               class="username"
               @click="redirectUsername($route.params.username)"
-            >{{this.$route.params.username}}</span>
+            >{{this.$route.params.username}}</i>
             on {{formatCompat(post.createdAt)}}
-            <span v-if="editedPost" :title="`Edited on ${new Date(this.post.editedOn)}`">(edited)</span>
-          </h6>
-          <p v-html="post.content" class="blog-post" v-show="!isEditing"></p>
+            <span
+              v-if="editedPost"
+              :title="`Edited on ${new Date(this.post.editedOn)}`"
+            >(edited)</span>
+          </div>
+          <div class="ql-snow">
+            <div class="ql-editor no-padding">
+              <div v-html="post.content" v-show="!isEditing"></div>
+            </div>
+          </div>
           <simple-editor v-model="postContent" v-show="isEditing"></simple-editor>
-          <b-button
-            pill
-            variant="primary"
-            class="floatRight bio-pill"
-            @click="isEditing = true;"
-            v-show="!isEditing && isMyPost"
-          >Edit Post</b-button>
           <b-button
             variant="primary"
             class="floatRight ml-2"
@@ -41,17 +40,32 @@
             @click="savePost"
           >Save Post</b-button>
           <b-button variant="info" class="floatRight" v-show="isEditing" @click="cancelEdit">Cancel</b-button>
-          <div class="icons mb-4">
+          <div class="icons mb-4 mt-3">
             <span class="likes">
               <i
-                class="far fa-heart fa-sm"
+                class="far fa-heart"
                 v-on:click="likePost(post._id)"
                 v-bind:class="{far: !post.isLikedByClient, fas: post.isLikedByClient, colorRed: post.isLikedByClient}"
               ></i>
               {{post.likeCount}}
             </span>
             <span class="comments">
-              <i class="far fa-comment-dots fa-sm ml-2"></i>
+              <i class="far fa-comment-dots ml-2"></i>
+            </span>
+            <span class="more" v-show="!isEditing && isMyPost">
+              <b-dropdown
+                variant="outline-warn"
+                ref="dropdown"
+                v-on:show="showMore = true"
+                v-on:hide="showMore = false"
+              >
+                <template v-slot:button-content>
+                  <i class="fa fa-chevron-down fa-lg" aria-hidden="true" v-show="!showMore"></i>
+                  <i class="fa fa-chevron-up fa-lg" aria-hidden="true" v-show="showMore"></i>
+                </template>
+                <b-dropdown-item @click="isEditing = true">Edit Post</b-dropdown-item>
+                <b-dropdown-item>Delete Post</b-dropdown-item>
+              </b-dropdown>
             </span>
           </div>
         </div>
@@ -79,6 +93,7 @@ export default {
       isEditing: false,
       postTitle: "",
       postContent: "",
+      showMore: false,
     };
   },
   computed: {
@@ -165,6 +180,8 @@ export default {
           params: {
             pid: this.$route.params.postId,
             clientName: localStorage.getItem("username"),
+            page: 1,
+            limit: 10,
           },
         }
       )

@@ -1,6 +1,6 @@
 
 const mongoose = require('mongoose');
-
+const mongoosePaginate = require('mongoose-paginate');
 const Schema = mongoose.Schema;
 const User = require('../models/User');
 
@@ -41,6 +41,8 @@ const PostSchema = new Schema({
   createdAt: { type: Date, default: Date.now },
   editedOn: { type: Date, default: Date.now },
 });
+
+PostSchema.plugin(mongoosePaginate);
 
 const Comment = mongoose.model('Comment', CommentSchema);
 const Post = mongoose.model('Post', PostSchema);

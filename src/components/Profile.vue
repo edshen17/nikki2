@@ -44,7 +44,7 @@
                 :class="{overlay: imageHover && isMyProfile}"
                 @click="$refs.file.click()"
               />
-              <i class="fas fa-edit centered" v-if="imageHover && isMyProfile"></i>
+              <i class="fas fa-user-edit centered" v-if="imageHover && isMyProfile"></i>
               <input
                 type="file"
                 ref="file"
@@ -55,10 +55,11 @@
               />
             </div>
             <h3 class="center mb-2 mt-2">{{$route.params.username}}</h3>
-            <p v-html="this.userInfo.bio" v-if="this.userInfo" v-show="!isEditing"></p>
+            <div v-html="this.userInfo.bio" v-if="this.userInfo" v-show="!isEditing"></div>
             <simple-editor v-model="bioContent" v-show="isEditing" :limit="200"></simple-editor>
             <b-button
-              pill variant="primary"
+              pill
+              variant="primary"
               class="floatRight bio-pill"
               @click="isEditing = true;"
               v-show="!isEditing && isMyProfile"
@@ -76,30 +77,44 @@
               @click="cancelEdit"
             >Cancel</b-button>
           </div>
-          <div v-if="posts" class="mt-2">
-            <div
-              v-for="post in posts"
-              :key="post._id"
-              :id="post._id"
-              @click="redirectPost(post._id)"
-              @mouseover="hover = post._id"
-              @mouseleave="hover = false"
-              :class="{active: hover === post._id }"
-            >
-              <h2 class="title">{{post.title}}</h2>
-              <h6>Posted by {{$route.params.username}} on {{formatCompat(post.createdAt)}}</h6>
-              <p v-html="truncateBlog(post.content)" class="blog-post-preview"></p>
-              <div class="icons mb-4">
-                <span class="likes">
-                  <i
-                    class="far fa-heart fa-sm"
-                    v-bind:class="{far: !post.isLikedByClient, fas: post.isLikedByClient, colorRed: post.isLikedByClient}"
-                  ></i>
-                  {{ post.likeCount}}
-                </span>
-                <span class="comments">
-                  <i class="far fa-comment-dots fa-sm ml-2"></i>
-                </span>
+          <div
+            v-infinite-scroll="loadMore"
+            infinite-scroll-disabled="busy"
+            infinite-scroll-distance="limit"
+          >
+            <div v-if="posts" class="mt-2">
+              <div
+                v-for="post in posts"
+                :key="post._id"
+                :id="post._id"
+                @click="redirectPost(post._id)"
+                @mouseover="hover = post._id"
+                @mouseleave="hover = false"
+                :class="{active: hover === post._id }"
+              >
+                <h2 class="title">{{post.title}}</h2>
+                <div>
+                  Posted by
+                  <i class="username">{{$route.params.username}}</i>
+                  on {{formatCompat(post.createdAt)}}
+                </div>
+                <div class="ql-snow">
+                  <div class="ql-editor no-padding">
+                    <div v-html="truncateBlog(post.content)" class="blog-post-preview"></div>
+                  </div>
+                </div>
+                <div class="icons mb-4">
+                  <span class="likes">
+                    <i
+                      class="far fa-heart fa-sm"
+                      v-bind:class="{far: !post.isLikedByClient, fas: post.isLikedByClient, colorRed: post.isLikedByClient}"
+                    ></i>
+                    {{ post.likeCount}}
+                  </span>
+                  <span class="comments">
+                    <i class="far fa-comment-dots fa-sm ml-2"></i>
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -136,6 +151,8 @@ export default {
       isSaved: false,
       bioContent: "",
       isEditing: false,
+      pageNumber: 0,
+      limit: 10,
     };
   },
   computed: {
@@ -145,6 +162,26 @@ export default {
     },
   },
   methods: {
+    loadMore() {
+      this.pageNumber += 1;
+      this.busy = true;
+      console.log("append");
+      axios
+        .get(
+          `http://localhost:5000/server/users/${this.$route.params.username}/posts/`,
+          {
+            params: {
+              page: this.pageNumber,
+              limit: 10,
+            },
+          }
+        )
+        .then((res) => {
+          console.log(res.data);
+          this.posts = this.posts.concat(res.data);
+          this.busy = false;
+        });
+    },
     cancelEdit() {
       this.isEditing = false;
       this.bioContent = this.userInfo.bio;
@@ -159,7 +196,7 @@ export default {
       axios
         .put(
           `http://localhost:5000/server/users/${this.$route.params.username}/updateProfile`,
-          { bio: this.bioContent },
+          { bio: this.bioContent }
         )
         .then(() => {
           this.userInfo.bio = this.bioContent;
@@ -189,7 +226,7 @@ export default {
               axios
                 .put(
                   `http://localhost:5000/server/users/${this.$route.params.username}/updateProfile`,
-                  { imageURL: res.data },
+                  { imageURL: res.data }
                 )
                 .catch((err) => {
                   console.log(err);
@@ -238,7 +275,9 @@ export default {
       this.apiMessage = data;
     },
     redirectPost(postId) {
-      this.$router.push(`${this.$route.params.username}/post/${postId}`);
+      this.$router.push(
+        `/profile/${this.$route.params.username}/post/${postId}`
+      );
     },
     formatCompat(dateStr) {
       // formats mongoose date string into something nicer
@@ -268,11 +307,18 @@ export default {
     },
   },
   mounted() {
-    let clientName = localStorage.getItem("username") || '';
+    const clientName = localStorage.getItem("username") || "";
     // get post data to display
     axios
       .get(
-        `http://localhost:5000/server/users/${this.$route.params.username}/posts/?clientName=${clientName}`,
+        `http://localhost:5000/server/users/${this.$route.params.username}/posts/`,
+        {
+          params: {
+            clientName,
+            page: 1,
+            limit: 10,
+          },
+        }
       )
       .then((res) => {
         this.posts = res.data;
