@@ -9,25 +9,66 @@
             variant="success"
             dismissible
           >Profile picture edits were saved successfully but may take time to update.</b-alert>
-          <b-modal id="imgModal" title="Edit Profile" :no-close-on-backdrop="true">
-            <div>
-              <cropper
-                class="cropper"
-                stencil-component="circle-stencil"
-                minWidth="40"
-                maxWidth="80"
-                :stencil-props="{
+          <b-modal id="modal-lg" title="Edit Profile" :no-close-on-backdrop="true" v-if="userInfo">
+            <img
+              v-show="userInfo && !isEditingImage && !updatedImage"
+              class="rounded-circle center-image"
+              alt="100x100"
+              :src="userInfo.imageURL"
+              data-holder-rendered="true"
+              :class="{overlay: imageHover && isMyProfile}"
+              @click="$refs.file.click();"
+            />
+            <img
+              v-show="!isEditingImage && updatedImage"
+              class="rounded-circle center-image"
+              alt="100x100"
+              :src="updatedImage"
+              data-holder-rendered="true"
+              :class="{overlay: imageHover && isMyProfile}"
+              @click="$refs.file.click();"
+            />
+            <simple-editor v-model="bioContent" v-show="!isEditingImage" :limit="200" class="mt-4"></simple-editor>
+            <cropper
+              v-show="isEditingImage"
+              class="cropper"
+              stencil-component="circle-stencil"
+              minWidth="40"
+              maxWidth="100"
+              :stencil-props="{
                   handlers: {},
                   movable: false,
                   scalable: false,
                   aspectRatio: 1,
                 }"
-                image-restriction="stencil"
-                :src="image"
-                @change="change"
-              />
+              image-restriction="stencil"
+              :src="image"
+              @change="change"
+            />
+            <i class="fas fa-user-edit centered" v-if="imageHover && isMyProfile"></i>
+            <input
+              type="file"
+              ref="file"
+              class="hide"
+              @change="selectImage($event)"
+              accept="image/*"
+              v-if="isMyProfile"
+            />
+            <div slot="modal-footer">
+              <b-button
+                variant="primary"
+                class="floatRight ml-2"
+                v-show="!isEditingImage"
+                @click="saveBio"
+              >Save</b-button>
+              <b-button
+                variant="primary"
+                class="floatRight ml-2"
+                v-show="isEditingImage"
+                @click="isEditingImage = false;"
+              >Apply</b-button>
+              <b-button variant="warning" class="floatRight ml-2" @click="cancelEdit">Cancel</b-button>
             </div>
-            <div slot="modal-ok" @click="onUpload">Save Changes</div>
           </b-modal>
           <div class="profileBio mb-5">
             <div
@@ -42,7 +83,7 @@
                 :src="userInfo.imageURL"
                 data-holder-rendered="true"
                 :class="{overlay: imageHover && isMyProfile}"
-                @click="$refs.file.click()"
+                @click="openModal"
               />
               <i class="fas fa-user-edit centered" v-if="imageHover && isMyProfile"></i>
               <input
@@ -55,33 +96,13 @@
               />
             </div>
             <h3 class="center mb-2 mt-2">{{$route.params.username}}</h3>
-            <div v-html="this.userInfo.bio" v-if="this.userInfo" v-show="!isEditing"></div>
-            <simple-editor v-model="bioContent" v-show="isEditing" :limit="200"></simple-editor>
-            <b-button
-              variant="primary"
-              class="floatRight"
-              @click="isEditing = true;"
-              v-show="!isEditing && isMyProfile"
-            >Edit Bio</b-button>
-            <b-button
-              variant="primary"
-              class="floatRight ml-2"
-              v-show="isEditing"
-              @click="saveBio"
-            >Save Bio</b-button>
-            <b-button
-              variant="info"
-              class="floatRight"
-              v-show="isEditing"
-              @click="cancelEdit"
-            >Cancel</b-button>
+            <div v-html="this.userInfo.bio" v-if="this.userInfo"></div>
           </div>
-          <div>
+          <div class="mt-2">
             <div
               v-infinite-scroll="loadMore"
               infinite-scroll-disabled="busy"
               infinite-scroll-distance="limit"
-              class="mt-2"
             >
               <div v-if="posts">
                 <div
@@ -114,8 +135,8 @@
                       <i class="username">{{$route.params.username}}</i>
                       on {{formatCompat(post.createdAt)}}
                     </header>
-                    <div class="card-content">
-                      <div class="content">
+                    <div>
+                      <div class="card-body">
                         <div class="ql-snow card-content">
                           <div class="ql-editor">
                             <div v-html="truncateBlog(post.content)" class="blog-post-preview"></div>
@@ -157,12 +178,13 @@ export default {
       userInfo: null,
       hover: false,
       image: null,
+      updatedImage: null,
       imageHover: false,
       isSaved: false,
       bioContent: "",
-      isEditing: false,
       pageNumber: 0,
       limit: 10,
+      isEditingImage: false,
     };
   },
   computed: {
@@ -172,6 +194,9 @@ export default {
     },
   },
   methods: {
+    openModal() {
+      this.$bvModal.show("modal-lg");
+    },
     loadMore() {
       this.pageNumber += 1;
       this.busy = true;
@@ -186,13 +211,19 @@ export default {
           }
         )
         .then((res) => {
+          console.log(res.data);
           this.posts = this.posts.concat(res.data);
           this.busy = false;
         });
     },
     cancelEdit() {
-      this.isEditing = false;
-      this.bioContent = this.userInfo.bio;
+      if (this.isEditingImage) {
+        this.isEditingImage = false;
+        this.updatedImage = null;
+      } else {
+        this.$bvModal.hide("modal-lg");
+        this.bioContent = this.userInfo.bio;
+      }
     },
     defaultSize() {
       return {
@@ -208,11 +239,12 @@ export default {
         )
         .then(() => {
           this.userInfo.bio = this.bioContent;
-          this.isEditing = false;
         })
         .catch((err) => {
           console.log(err);
         });
+      this.onUpload();
+      this.$bvModal.hide("modal-lg");
     },
     onUpload() {
       const form = new FormData();
@@ -248,6 +280,7 @@ export default {
     },
     change({ coordinates, canvas }) {
       this.canvas = canvas;
+      this.updatedImage = canvas.toDataURL();
     },
     selectImage(event) {
       // Reference to the DOM input element
@@ -264,8 +297,8 @@ export default {
         // Start the reader job - read file as a data url (base64 format)
         reader.readAsDataURL(input.files[0]);
       }
-      this.$bvModal.show("imgModal");
       this.$refs.file.value = "";
+      this.isEditingImage = !this.isEditingImage;
     },
     async callApi() {
       // Get the access token from the auth wrapper
@@ -311,7 +344,7 @@ export default {
     truncateBlog(blogPost) {
       // truncates the blog post
       if (blogPost.length < 350) return blogPost;
-      return `${blogPost.substring(0, 350)}<em>...read more</em>`;
+      return `${blogPost.substring(0, 350)}<em>...</em>`;
     },
   },
   mounted() {

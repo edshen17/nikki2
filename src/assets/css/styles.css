@@ -61,6 +61,7 @@ body {
 
 .active {
   background: #f0f1f2;
+  cursor: pointer;
 }
 
 .centered {
@@ -154,6 +155,12 @@ z-index: 10;
     margin-right: auto;
     
     } 
+
+    .modal-content {
+      margin-left: -11%;
+      width: 122%;
+      max-height: 60%;
+    }
 }
 
 /* Small devices - For blog/profile page */
@@ -163,4 +170,9 @@ z-index: 10;
   line-height: 1.4;
   text-align: justify;
   }
+}
+
+.cropper {
+  height: 500px;
+	background: #DDD;
 }
