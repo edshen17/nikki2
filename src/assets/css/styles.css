@@ -119,6 +119,15 @@ footer {
 z-index: 10;
 }
 
+hide {
+  display: none;
+}
+
+.modal-open {
+  padding-right: 0px !important;
+  overflow: visible;
+}
+
 
 /* Small-Medium devices */
 @media screen and (max-width: 992px) { 

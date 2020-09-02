@@ -98,11 +98,13 @@
             <h3 class="center mb-2 mt-2">{{$route.params.username}}</h3>
             <div v-html="this.userInfo.bio" v-if="this.userInfo"></div>
           </div>
-          <div class="mt-2">
+          <div>
+            <simple-editor class="hide"></simple-editor> <!-- initalize editor to format posts -->
             <div
               v-infinite-scroll="loadMore"
               infinite-scroll-disabled="busy"
               infinite-scroll-distance="limit"
+              class="mt-2"
             >
               <div v-if="posts">
                 <div
@@ -135,8 +137,8 @@
                       <i class="username">{{$route.params.username}}</i>
                       on {{formatCompat(post.createdAt)}}
                     </header>
-                    <div>
-                      <div class="card-body">
+                    <div class="card-content">
+                      <div class="content">
                         <div class="ql-snow card-content">
                           <div class="ql-editor">
                             <div v-html="truncateBlog(post.content)" class="blog-post-preview"></div>
@@ -154,7 +156,6 @@
     </div>
   </div>
 </template>
-
 <script>
 import Vue from "vue";
 import axios from "axios";
@@ -377,4 +378,3 @@ export default {
   },
 };
 </script>
-
