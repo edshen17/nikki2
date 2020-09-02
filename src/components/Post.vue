@@ -40,7 +40,7 @@
             @click="savePost"
           >Save Post</b-button>
           <b-button variant="info" class="floatRight" v-show="isEditing" @click="cancelEdit">Cancel</b-button>
-          <div class="icons mb-4 mt-3">
+          <div class="icons mb-4">
             <span class="likes">
               <i
                 class="far fa-heart"

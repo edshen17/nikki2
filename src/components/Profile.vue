@@ -10,7 +10,7 @@
             dismissible
           >Profile picture edits were saved successfully but may take time to update.</b-alert>
           <b-modal id="imgModal" title="Edit Profile" :no-close-on-backdrop="true">
-            <div class="upload-example">
+            <div>
               <cropper
                 class="cropper"
                 stencil-component="circle-stencil"
@@ -58,9 +58,8 @@
             <div v-html="this.userInfo.bio" v-if="this.userInfo" v-show="!isEditing"></div>
             <simple-editor v-model="bioContent" v-show="isEditing" :limit="200"></simple-editor>
             <b-button
-              pill
               variant="primary"
-              class="floatRight bio-pill"
+              class="floatRight"
               @click="isEditing = true;"
               v-show="!isEditing && isMyProfile"
             >Edit Bio</b-button>
@@ -77,43 +76,54 @@
               @click="cancelEdit"
             >Cancel</b-button>
           </div>
-          <div
-            v-infinite-scroll="loadMore"
-            infinite-scroll-disabled="busy"
-            infinite-scroll-distance="limit"
-          >
-            <div v-if="posts" class="mt-2">
-              <div
-                v-for="post in posts"
-                :key="post._id"
-                :id="post._id"
-                @click="redirectPost(post._id)"
-                @mouseover="hover = post._id"
-                @mouseleave="hover = false"
-                :class="{active: hover === post._id }"
-              >
-                <h2 class="title">{{post.title}}</h2>
-                <div>
-                  Posted by
-                  <i class="username">{{$route.params.username}}</i>
-                  on {{formatCompat(post.createdAt)}}
-                </div>
-                <div class="ql-snow">
-                  <div class="ql-editor no-padding">
-                    <div v-html="truncateBlog(post.content)" class="blog-post-preview"></div>
+          <div>
+            <div
+              v-infinite-scroll="loadMore"
+              infinite-scroll-disabled="busy"
+              infinite-scroll-distance="limit"
+              class="mt-2"
+            >
+              <div v-if="posts">
+                <div
+                  v-for="post in posts"
+                  :key="post._id"
+                  :id="post._id"
+                  @click="redirectPost(post._id)"
+                  @mouseover="hover = post._id"
+                  @mouseleave="hover = false"
+                  style="margin-bottom: 2rem;"
+                  data-aos="slide-up"
+                  data-aos-offset="100"
+                  data-aos-easing="ease-out-back"
+                >
+                  <div class="card" :class="{active: hover === post._id }">
+                    <header class="card-header">
+                      <div class="floatRight">
+                        <span class="likes">
+                          <i
+                            class="far fa-heart"
+                            v-bind:class="{far: !post.isLikedByClient, fas: post.isLikedByClient, colorRed: post.isLikedByClient}"
+                          ></i>
+                          {{ post.likeCount}}
+                        </span>
+                        <span class="comments">
+                          <i class="far fa-comment-dots ml-2"></i>
+                        </span>
+                      </div>
+                      <h4 class="card-header-title">{{post.title}}</h4>Posted by
+                      <i class="username">{{$route.params.username}}</i>
+                      on {{formatCompat(post.createdAt)}}
+                    </header>
+                    <div class="card-content">
+                      <div class="content">
+                        <div class="ql-snow card-content">
+                          <div class="ql-editor">
+                            <div v-html="truncateBlog(post.content)" class="blog-post-preview"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div class="icons mb-4">
-                  <span class="likes">
-                    <i
-                      class="far fa-heart fa-sm"
-                      v-bind:class="{far: !post.isLikedByClient, fas: post.isLikedByClient, colorRed: post.isLikedByClient}"
-                    ></i>
-                    {{ post.likeCount}}
-                  </span>
-                  <span class="comments">
-                    <i class="far fa-comment-dots fa-sm ml-2"></i>
-                  </span>
                 </div>
               </div>
             </div>
@@ -165,7 +175,6 @@ export default {
     loadMore() {
       this.pageNumber += 1;
       this.busy = true;
-      console.log("append");
       axios
         .get(
           `http://localhost:5000/server/users/${this.$route.params.username}/posts/`,
@@ -177,7 +186,6 @@ export default {
           }
         )
         .then((res) => {
-          console.log(res.data);
           this.posts = this.posts.concat(res.data);
           this.busy = false;
         });

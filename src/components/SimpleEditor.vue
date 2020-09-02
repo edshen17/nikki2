@@ -2,7 +2,7 @@
   <div class="simple-editor">
     <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.6/quill.snow.css" />
     <div ref="editorNode"></div>
-    <h6 class="mt-1" v-if="limit">{{wordCount - 1}} / {{this.limit}}</h6>
+    <span class="" v-if="limit">{{wordCount - 1}} / {{this.limit}}</span>
   </div>
 </template>
 
