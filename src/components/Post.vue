@@ -15,7 +15,7 @@
             v-show="isEditing"
             maxlength="60"
           />
-          <div v-show="!isEditing">
+          <div v-show="!isEditing" class="mb-2">
             Posted by
             <i
               class="username"
@@ -67,6 +67,9 @@
                 <b-dropdown-item>Delete Post</b-dropdown-item>
               </b-dropdown>
             </span>
+          </div>
+          <div class="comments mt-2">
+        
           </div>
         </div>
       </div>

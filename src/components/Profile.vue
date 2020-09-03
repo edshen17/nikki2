@@ -4,11 +4,7 @@
       <div class="row">
         <div class="col-sm-2"></div>
         <div class="col-sm-8">
-          <b-alert
-            v-model="isSaved"
-            variant="success"
-            dismissible
-          >Edits were saved successfully.</b-alert>
+          <b-alert v-model="isSaved" variant="success" dismissible>Updates saved successfully</b-alert>
           <b-modal id="modal-lg" title="Edit Profile" :no-close-on-backdrop="true" v-if="userInfo">
             <img
               v-show="userInfo && !isEditingImage"
@@ -96,7 +92,7 @@
             <div
               v-infinite-scroll="loadMore"
               infinite-scroll-disabled="busy"
-              infinite-scroll-distance="limit"
+              infinite-scroll-distance="200"
               class="mt-2"
             >
               <div v-if="posts">
@@ -245,7 +241,10 @@ export default {
         .catch((err) => {
           console.log(err);
         });
-      this.onUpload();
+        
+      if (this.updatedImage !== this.userInfo.imageURL) { // updates were made to profile picture
+        this.onUpload();
+      }
       this.$bvModal.hide("modal-lg");
     },
     change({ coordinates, canvas }) {
