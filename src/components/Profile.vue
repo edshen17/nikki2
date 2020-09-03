@@ -8,19 +8,10 @@
             v-model="isSaved"
             variant="success"
             dismissible
-          >Profile picture edits were saved successfully but may take time to update.</b-alert>
+          >Edits were saved successfully.</b-alert>
           <b-modal id="modal-lg" title="Edit Profile" :no-close-on-backdrop="true" v-if="userInfo">
             <img
-              v-show="userInfo && !isEditingImage && !updatedImage"
-              class="rounded-circle center-image"
-              alt="100x100"
-              :src="userInfo.imageURL"
-              data-holder-rendered="true"
-              :class="{overlay: imageHover && isMyProfile}"
-              @click="$refs.file.click();"
-            />
-            <img
-              v-show="!isEditingImage && updatedImage"
+              v-show="userInfo && !isEditingImage"
               class="rounded-circle center-image"
               alt="100x100"
               :src="updatedImage"
@@ -29,22 +20,23 @@
               @click="$refs.file.click();"
             />
             <simple-editor v-model="bioContent" v-show="!isEditingImage" :limit="200" class="mt-4"></simple-editor>
-            <cropper
-              v-show="isEditingImage"
-              class="cropper"
-              stencil-component="circle-stencil"
-              minWidth="40"
-              maxWidth="100"
-              :stencil-props="{
+            <div v-show="isEditingImage">
+              <cropper
+                class="cropper"
+                stencil-component="circle-stencil"
+                minWidth="40"
+                maxWidth="100"
+                :stencil-props="{
                   handlers: {},
                   movable: false,
                   scalable: false,
                   aspectRatio: 1,
                 }"
-              image-restriction="stencil"
-              :src="image"
-              @change="change"
-            />
+                image-restriction="stencil"
+                :src="image"
+                @change="change"
+              />
+            </div>
             <i class="fas fa-user-edit centered" v-if="imageHover && isMyProfile"></i>
             <input
               type="file"
@@ -65,7 +57,7 @@
                 variant="primary"
                 class="floatRight ml-2"
                 v-show="isEditingImage"
-                @click="isEditingImage = false;"
+                @click="applyChanges"
               >Apply</b-button>
               <b-button variant="warning" class="floatRight ml-2" @click="cancelEdit">Cancel</b-button>
             </div>
@@ -99,7 +91,8 @@
             <div v-html="this.userInfo.bio" v-if="this.userInfo"></div>
           </div>
           <div>
-            <simple-editor class="hide"></simple-editor> <!-- initalize editor to format posts -->
+            <simple-editor class="hide"></simple-editor>
+            <!-- initalize editor to format posts -->
             <div
               v-infinite-scroll="loadMore"
               infinite-scroll-disabled="busy"
@@ -159,6 +152,7 @@
 <script>
 import Vue from "vue";
 import axios from "axios";
+import firebase from "firebase";
 import { Cropper } from "vue-advanced-cropper";
 import LayoutDefault from "./layouts/LayoutDefault";
 import SimpleEditor from "./SimpleEditor";
@@ -186,6 +180,7 @@ export default {
       pageNumber: 0,
       limit: 10,
       isEditingImage: false,
+      canvas: null,
     };
   },
   computed: {
@@ -195,6 +190,10 @@ export default {
     },
   },
   methods: {
+    applyChanges() {
+      this.isEditingImage = !this.isEditingImage;
+      this.updatedImage = this.canvas.toDataURL();
+    },
     openModal() {
       this.$bvModal.show("modal-lg");
     },
@@ -212,18 +211,20 @@ export default {
           }
         )
         .then((res) => {
-          console.log(res.data);
           this.posts = this.posts.concat(res.data);
           this.busy = false;
         });
     },
     cancelEdit() {
       if (this.isEditingImage) {
-        this.isEditingImage = false;
-        this.updatedImage = null;
+        // when user is selecting the image
+        this.isEditingImage = !this.isEditingImage;
       } else {
+        // when user is editing their profile bio
         this.$bvModal.hide("modal-lg");
         this.bioContent = this.userInfo.bio;
+        this.isEditingImage = false;
+        this.updatedImage = this.userInfo.imageURL;
       }
     },
     defaultSize() {
@@ -247,41 +248,8 @@ export default {
       this.onUpload();
       this.$bvModal.hide("modal-lg");
     },
-    onUpload() {
-      const form = new FormData();
-      if (this.canvas) {
-        this.canvas.toBlob((blob) => {
-          form.append(
-            "image",
-            blob,
-            `${this.$route.params.username}_profilePic.jpg`
-          );
-
-          axios
-            .post(
-              "https://us-central1-japanese-221819.cloudfunctions.net/uploadFile",
-              form
-            )
-            .then((res) => {
-              this.isSaved = true;
-              axios
-                .put(
-                  `http://localhost:5000/server/users/${this.$route.params.username}/updateProfile`,
-                  { imageURL: res.data }
-                )
-                .catch((err) => {
-                  console.log(err);
-                });
-            })
-            .catch((err) => {
-              console.log(err);
-            });
-        }, "image/jpeg");
-      }
-    },
     change({ coordinates, canvas }) {
       this.canvas = canvas;
-      this.updatedImage = canvas.toDataURL();
     },
     selectImage(event) {
       // Reference to the DOM input element
@@ -300,6 +268,7 @@ export default {
       }
       this.$refs.file.value = "";
       this.isEditingImage = !this.isEditingImage;
+      this.image = null;
     },
     async callApi() {
       // Get the access token from the auth wrapper
@@ -347,6 +316,35 @@ export default {
       if (blogPost.length < 350) return blogPost;
       return `${blogPost.substring(0, 350)}<em>...</em>`;
     },
+    async onUpload() {
+      try {
+        const metaData = {
+          contentType: "image/png",
+        };
+
+        const storageRef = firebase.storage().ref();
+        const imageRef = storageRef.child(
+          `images/${this.$route.params.username}_profilePic.png`
+        );
+
+        this.canvas.toBlob(async (blob) => {
+          await imageRef.put(blob, metaData);
+          const downloadUrl = await imageRef.getDownloadURL();
+          this.userInfo.imageURL = this.updatedImage;
+          this.isSaved = true;
+          axios
+            .put(
+              `http://localhost:5000/server/users/${this.$route.params.username}/updateProfile`,
+              { imageURL: downloadUrl }
+            )
+            .catch((err) => {
+              console.log(err);
+            });
+        });
+      } catch (error) {
+        console.log(error);
+      }
+    },
   },
   mounted() {
     const clientName = localStorage.getItem("username") || "";
@@ -373,6 +371,7 @@ export default {
       )
       .then((res) => {
         this.userInfo = res.data.users[0];
+        this.updatedImage = this.userInfo.imageURL;
         this.bioContent = res.data.users[0].bio;
       });
   },
