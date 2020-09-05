@@ -2,6 +2,7 @@ import Vue from 'vue';
 import BootstrapVue from 'bootstrap-vue';
 import 'bootstrap/dist/css/bootstrap.css';
 import 'bootstrap-vue/dist/bootstrap-vue.css';
+import VueCookies from 'vue-cookies'
 import InfiniteScroll from 'vue-infinite-scroll';
 import Firebase from 'firebase';
 import "aos/dist/aos.css";
@@ -22,6 +23,8 @@ Firebase.initializeApp(firebaseConfig);
 
 
 Vue.use(InfiniteScroll);
+Vue.use(VueCookies);
+Vue.$cookies.config('90d');
 Vue.use(BootstrapVue);
 Vue.use(Auth0Plugin, {
   domain,

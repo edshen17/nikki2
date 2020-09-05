@@ -28,18 +28,6 @@ const UserSchema = new mongoose.Schema({
     default: 'has not written a self-introduction yet',
     required: false,
   },
-  followers: {
-    type: [this],
-    default: [],
-  },
-  following: {
-    type: [this],
-    default: [],
-  },
-  comments: {
-    type: [{ type: Schema.Types.ObjectId, ref: 'CommentSchema' }],
-    default: [],
-  },
 });
 
 const User = mongoose.model('User', UserSchema);

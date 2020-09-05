@@ -1,13 +1,9 @@
 
 const mongoose = require('mongoose');
-
 const Schema = mongoose.Schema;
-const Post = require('../models/Post').Post;
-const PostSchema = mongoose.model('Post').schema;
-
 
 const LikeSchema = new Schema({
-  postId: { type: Schema.Types.ObjectId, ref: 'PostSchema' },
+  parentId: { type: Schema.Types.ObjectId },
   likedBy: { type: Schema.Types.ObjectId, ref: 'UserSchema' },
 });
 

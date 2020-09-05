@@ -4,6 +4,7 @@ const jsonParser = require('body-parser').json;
 const cors = require('cors');
 const users = require('./users.js');
 const mongoose = require('mongoose');
+const cookieParser = require('cookie-parser');
 
 const app = express();
 
@@ -11,6 +12,7 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cors());
 app.use(jsonParser());
+app.use(cookieParser());
 
 app.use('/server/users', users);
 // DB

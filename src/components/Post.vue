@@ -68,9 +68,7 @@
               </b-dropdown>
             </span>
           </div>
-          <div class="comments mt-2">
-        
-          </div>
+          <div class="comments mt-2"></div>
         </div>
       </div>
     </div>
@@ -79,6 +77,7 @@
 
 <script>
 import axios from "axios";
+import uniqid from "uniqid";
 import SimpleEditor from "./SimpleEditor";
 import LayoutDefault from "./layouts/LayoutDefault";
 
@@ -192,8 +191,26 @@ export default {
         this.post = res.data[0];
         this.postTitle = res.data[0].title;
         this.postContent = res.data[0].content;
+
+        if (!this.$cookies.get("sessionUser")) {
+          const uuid = uniqid();
+          this.$cookies.set("sessionUser", uuid);
+          axios
+            .post(`http://localhost:5000/server/users/posts/${this.post._id}/view/`, {
+              uuid,
+            })
+            .catch((err) => {
+              console.log(err);
+            });
+        }
       });
   },
 };
+
+// const sessionUser = {
+//           uniqid: uniqid(),
+//         },
+
+//         this.$cookies.set('sessionUser', sessionUser);
 </script>
 

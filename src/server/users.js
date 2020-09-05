@@ -15,6 +15,10 @@ const {
   Like,
 } = require('../models/Like');
 
+const {
+  View,
+} = require('../models/View');
+
 const authConfig = {
   domain: 'dev-o3ydis3u.auth0.com',
   audience: 'http://localhost:5000/',
@@ -95,7 +99,7 @@ router.get('/:username/posts', (req, res) => {
   User.find({
     username: req.params.username,
   }).exec((err, user) => {
-    if (err || user.length === 0) return console.log(err || 'User does not exist! b');
+    if (err || user.length === 0) return console.log(err || 'User does not exist!');
     let dbQuery = {};
     !req.query.pid ? dbQuery = { postedBy: user[0]._id } : dbQuery = { postedBy: user[0]._id, _id: req.query.pid };
     req.query.page = parseInt(req.query.page);
@@ -131,25 +135,25 @@ router.get('/:username/posts', (req, res) => {
 });
 
 
-// POST /posts/:postId/like/:likedByUserId
+// POST /posts/:parentId/like/:likedByUserId
 // Route for liking/unliking a post
 router.post('/posts/:pID/like/:username', (req, res, next) => {
   User.find({
     username: req.params.username,
   }).exec((err, user) => {
     if (err || user.length === 0) return console.log(err || 'User does not exist! c');
-    Like.find({ postId: req.params.pID, likedBy: user[0]._id }).exec((er, likeArr) => {
+    Like.find({ parentId: req.params.pID, likedBy: user[0]._id }).exec((er, likeArr) => {
       if (er) return console.log(err);
-      if (likeArr.length === 0) { // user has not liked post yet (like post)
+      if (likeArr.length === 0) { // user has not liked parent (post/coment) yet
         const like = new Like({
-          postId: req.params.pID,
+          parentId: req.params.pID,
           likedBy: user[0]._id,
         });
         like.save((e) => {
           if (e) return next(e);
           return res.status(200).send(true);
         });
-      } else { // user has already liked post (unliked post)
+      } else { // user has already liked parent (unlike post/comment)
         Like.findByIdAndDelete(likeArr[0]._id, (errDelete) => {
           if (errDelete) console.log(errDelete);
           return res.status(200).send(false);
@@ -163,7 +167,7 @@ router.post('/posts/:pID/like/:username', (req, res, next) => {
 // Route for getting a post's like information.
 router.get('/posts/:pID/like/:username?', (req, res) => {
   if (!req.params.username) { // user not logged in
-    Like.find({ postId: req.params.pID }).exec((err, likeArr) => {
+    Like.find({ parentId: req.params.pID }).exec((err, likeArr) => {
       if (err) return res.status(404).json(err);
       const likeObj = {
         likeArr,
@@ -177,7 +181,7 @@ router.get('/posts/:pID/like/:username?', (req, res) => {
       username: req.params.username,
     }).exec((err, user) => {
       if (err || user.length === 0) return res.status(404).json(err || `User does not exist! ${req.params.username}`);
-      Like.find({ postId: req.params.pID }).exec((er, likeArr) => {
+      Like.find({ parentId: req.params.pID }).exec((er, likeArr) => {
         if (er) return res.status(404).json(er);
         const isLikedByClient = likeArr.some((like => { return like.likedBy.equals(user[0]._id) }));
         const likeObj = {
@@ -209,6 +213,25 @@ router.put('/:username/updatePost/:pID', (req, res, next) => {
     });
 });
 
+// POST /posts/:parentId/like/:likedByUserId
+// Route for recording post views
+router.post('/posts/:pID/view/', (req, res, next) => {
+  View.find({ postId: req.params.pID, viewedBy: req.body.uuid }).exec((err, viewArr) => {
+    console.log(req.body.uuid)
+    if (err) return console.log(err);
+    if (viewArr.length === 0) { // user has not viewed post yet
+      const view = new View({
+        postId: req.params.pID,
+        viewedBy: req.body.uuid,
+      });
+      view.save((e) => {
+        if (e) return next(e);
+        return res.status(200).send(true);
+      });
+    }
+  });
+});
+
 
 // // DELETE /users/:username/posts/:id/
 // // Route for deleting a specific post
@@ -217,7 +240,7 @@ router.put('/:username/updatePost/:pID', (req, res, next) => {
 //     const id = req.params.id;
 //     Comment.deleteMany({
 //       parentID: id,
-//     }, (err) => { // deletes all comments in the post as well
+//     }, (err) => { // deletes all comments in the post 
 //       if (err) return next(err);
 //       req.post.save(() => {
 //         res.status(200).send();
@@ -226,45 +249,36 @@ router.put('/:username/updatePost/:pID', (req, res, next) => {
 //   });
 // });
 
-// // POST /users/:username/posts/comment
-// // Route for creating a comment for a specific post
-// router.post('/:username/posts/:id/comment', (req, res, next) => {
-//   if (req.body.comments) { // if we already made the comment and are updating the comments array
-//     Post.findById(req.params.id, (err, post) => {
-//       if (err) return next(err);
-//       post.comments = req.body.comments;
-//       post.save(() => {
-//         if (err) return next(err);
-//         res.status(200).json(post);
-//       });
-//     });
-//   } else { // creating a new comment
-//     const parentID = req.params.id;
-//     const postedBy = req.body.postedBy;
-//     const content = req.body.content;
-//     const comment = new Comment({
-//       parentID,
-//       postedBy,
-//       content,
-//     });
+// POST /users/:username/posts/comment
+// Route for creating a comment for a specific post
+router.post('/comment/:pId/', (req, res, next) => {
+  // creating a new comment
+  const parentID = req.params.id;
+  const postedBy = req.body.postedBy;
+  const content = req.body.content;
+  const comment = new Comment({
+    parentID,
+    postedBy,
+    content,
+  });
 
-//     User.find({
-//       username: req.params.username,
-//     })
-//       .exec((err, user) => {
-//         if (err) return next(err);
-//         user.comments.push(comment);
-//         users.comment_count++;
-//         user.save(() => {
-//           if (err) return next(err);
-//           comment.save((err) => {
-//             if (err) return next(err);
-//             res.status(200).json(comment);
-//           });
-//         });
-//       });
-//   }
-// });
+  User.find({
+    username: req.params.username,
+  })
+    .exec((err, user) => {
+      if (err) return next(err);
+      user.comments.push(comment);
+      users.comment_count++;
+      user.save(() => {
+        if (err) return next(err);
+        comment.save((err) => {
+          if (err) return next(err);
+          res.status(200).json(comment);
+        });
+      });
+    });
+
+});
 
 
 module.exports = router;
