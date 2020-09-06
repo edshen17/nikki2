@@ -1,6 +1,6 @@
 
 const mongoose = require('mongoose');
-
+const aggregatePaginate = require('mongoose-aggregate-paginate-v2');
 const Schema = mongoose.Schema;
 const Post = require('../models/Post').Post;
 
@@ -29,6 +29,8 @@ const UserSchema = new mongoose.Schema({
     required: false,
   },
 });
+UserSchema.plugin(aggregatePaginate);
+
 
 const User = mongoose.model('User', UserSchema);
 module.exports = User;

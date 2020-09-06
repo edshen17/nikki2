@@ -135,6 +135,7 @@ router.get('/:username/posts', (req, res) => {
 });
 
 
+
 // POST /posts/:parentId/like/:likedByUserId
 // Route for liking/unliking a post
 router.post('/posts/:pID/like/:username', (req, res, next) => {
@@ -213,11 +214,10 @@ router.put('/:username/updatePost/:pID', (req, res, next) => {
     });
 });
 
-// POST /posts/:parentId/like/:likedByUserId
+// POST /posts/:parentId/views
 // Route for recording post views
 router.post('/posts/:pID/view/', (req, res, next) => {
   View.find({ postId: req.params.pID, viewedBy: req.body.uuid }).exec((err, viewArr) => {
-    console.log(req.body.uuid)
     if (err) return console.log(err);
     if (viewArr.length === 0) { // user has not viewed post yet
       const view = new View({
@@ -232,6 +232,14 @@ router.post('/posts/:pID/view/', (req, res, next) => {
   });
 });
 
+// GET /posts/:parentId/views
+// Route for getting post's view count
+router.get('/posts/:pID/view/', (req, res, next) => {
+  View.countDocuments({ postId: req.params.pID }, (err, viewCount) => {
+    if (err) return console.log(err);
+    return res.status(200).json(viewCount);
+  }).catch(err => console.log(err));
+});
 
 // // DELETE /users/:username/posts/:id/
 // // Route for deleting a specific post
@@ -251,33 +259,93 @@ router.post('/posts/:pID/view/', (req, res, next) => {
 
 // POST /users/:username/posts/comment
 // Route for creating a comment for a specific post
-router.post('/comment/:pId/', (req, res, next) => {
-  // creating a new comment
-  const parentID = req.params.id;
-  const postedBy = req.body.postedBy;
-  const content = req.body.content;
-  const comment = new Comment({
-    parentID,
-    postedBy,
-    content,
+// router.post('/comment/:pId/', (req, res, next) => {
+//   // creating a new comment
+//   const parentID = req.params.id;
+//   const postedBy = req.body.postedBy;
+//   const content = req.body.content;
+//   const comment = new Comment({
+//     parentID,
+//     postedBy,
+//     content,
+//   });
+
+//   User.find({
+//     username: req.params.username,
+//   })
+//     .exec((err, user) => {
+//       if (err) return next(err);
+//       user.comments.push(comment);
+//       users.comment_count++;
+//       user.save(() => {
+//         if (err) return next(err);
+//         comment.save((err) => {
+//           if (err) return next(err);
+//           res.status(200).json(comment);
+//         });
+//       });
+//     });
+// });
+
+
+// GET /users/:username/posts
+// Route for getting the posts of a user in json format 
+router.get('/:username/postss', (req, res) => {
+  User.aggregate([
+    {
+      $lookup: {
+        from: "posts",
+        localField: "_id",
+        foreignField: "postedBy",
+        as: "posts"
+      },
+    },
+    { $unwind: "$posts" },
+    {
+      $lookup: {
+        from: "likes",
+        localField: "posts._id",
+        foreignField: "parentId",
+        as: "likes"
+      },
+    },
+    {
+      $lookup: {
+        from: "views",
+        localField: "posts._id",
+        foreignField: "postId",
+        as: "views"
+      },
+    },
+    {
+      $addFields: {
+        "posts.likedBy": "$likes.likedBy"
+      },
+    },
+    {
+      $addFields: {
+        "posts.viewedBy": "$views.viewedBy"
+      },
+    },
+    {
+      $match: {
+        $and: [{ username: req.params.username }],
+      },
+    },
+    {
+      $group: {
+        _id: "_id",
+        posts: { $push: "$posts" }
+      },
+    },
+    {
+      $project: {
+        posts: 1,
+      },
+    },
+  ]).exec((err, t) => {
+    res.status(200).json(t);
   });
-
-  User.find({
-    username: req.params.username,
-  })
-    .exec((err, user) => {
-      if (err) return next(err);
-      user.comments.push(comment);
-      users.comment_count++;
-      user.save(() => {
-        if (err) return next(err);
-        comment.save((err) => {
-          if (err) return next(err);
-          res.status(200).json(comment);
-        });
-      });
-    });
-
 });
 
 

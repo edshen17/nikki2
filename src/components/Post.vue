@@ -195,14 +195,18 @@ export default {
         if (!this.$cookies.get("sessionUser")) {
           const uuid = uniqid();
           this.$cookies.set("sessionUser", uuid);
-          axios
-            .post(`http://localhost:5000/server/users/posts/${this.post._id}/view/`, {
-              uuid,
-            })
-            .catch((err) => {
-              console.log(err);
-            });
         }
+
+        axios
+          .post(
+            `http://localhost:5000/server/users/posts/${this.post._id}/view/`,
+            {
+              uuid: this.$cookies.get("sessionUser"),
+            },
+          )
+          .catch((err) => {
+            console.log(err);
+          });
       });
   },
 };
