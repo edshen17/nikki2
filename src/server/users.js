@@ -291,60 +291,65 @@ router.get('/posts/:pID/view/', (req, res, next) => {
 // GET /users/:username/posts
 // Route for getting the posts of a user in json format 
 router.get('/:username/postss', (req, res) => {
-  User.aggregate([
+  const userIdsToMatchAgainstComments = [mongoose.Types.ObjectId("5f42632893884a5728c0d6d3")];
+  Post.aggregate([
     {
       $lookup: {
-        from: "posts",
-        localField: "_id",
-        foreignField: "postedBy",
-        as: "posts"
+        from: "users",
+        localField: "postedBy",
+        foreignField: "_id",
+        as: "users"
       },
     },
-    { $unwind: "$posts" },
     {
       $lookup: {
         from: "likes",
-        localField: "posts._id",
+        localField: "_id",
         foreignField: "parentId",
-        as: "likes"
+        as: "likedBy"
       },
     },
     {
       $lookup: {
         from: "views",
-        localField: "posts._id",
+        localField: "_id",
         foreignField: "postId",
-        as: "views"
+        as: "viewedBy"
       },
     },
-    {
-      $addFields: {
-        "posts.likedBy": "$likes.likedBy"
-      },
-    },
-    {
-      $addFields: {
-        "posts.viewedBy": "$views.viewedBy"
-      },
-    },
+    { $addFields: { likeCount: { $size: '$likedBy' } } },
+    { $addFields: { viewCount: { $size: '$viewedBy' } } },
     {
       $match: {
-        $and: [{ username: req.params.username }],
-      },
-    },
-    {
-      $group: {
-        _id: "_id",
-        posts: { $push: "$posts" }
+        $and: [{ "users.username": req.params.username }],
       },
     },
     {
       $project: {
-        posts: 1,
+        title: 1,
+        content: 1,
+        createdAt: 1,
+        editedOn: 1,
+        likeCount: 1,
+        viewCount: 1,
+        likedBy: 1,
+        isLikedByClient: {
+          $cond:
+            [{
+              $gt: [
+                {
+                  $size:
+                  {
+                    $setIntersection: ['$likedBy.likedBy',
+                      userIdsToMatchAgainstComments],
+                  },
+                }, 0],
+            }, true, false],
+        },
       },
     },
-  ]).exec((err, t) => {
-    res.status(200).json(t);
+  ]).exec((err, test) => {
+    res.json(test);
   });
 });
 
